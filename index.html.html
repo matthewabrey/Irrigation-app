@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Abreys Irrigation</title>
+<meta name="theme-color" content="#2a2a27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Irrigation">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="irrigation.webmanifest">
+<link rel="apple-touch-icon" href="irrigation-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Abreys house style — matched to the Abreys Day to Day Work App (abreys.app) */
+:root{
+  --bg:#f6f4ee;          /* warm off-white page          hsl(45 31% 95%) */
+  --card:#fff;
+  --bd:#dcd8cb;          /* soft beige border            hsl(45 20% 83%) */
+  --bd2:#c4c0b2;         /* input border */
+  --muted:#efebe1;       /* muted fills                  hsl(45 25% 91%) */
+  --tx:#20201e;          /* text                          hsl(60 3% 12%) */
+  --tx2:#3e3e39;         /* labels */
+  --tx3:#6b6b66;         /* muted text                   hsl(60 2% 41%) */
+  --tx4:#9a968a;         /* faint */
+  --hdr:#2a2a27;         /* charcoal top bar */
+  --hdrtx:#ddd9cc; --hdrtx2:#c4c0b2;
+  --pri:#7db82b;         /* Abreys lime green            hsl(85 62% 45%) */
+  --pri2:#6a9e22;        /* hover */
+  --g1:#5d8f1c;          /* green text / accents */
+  --g2:#7db82b;
+  --g3:#e5f1d4;          /* light green fill             hsl(81 53% 89%) */
+  --gdk:#446614;         /* dark green text on light green */
+  --r1:#c0392b;--r2:#e67e22;--r3:#1565c0;--ok:#e5f1d4;--okt:#446614;
+  --serif:ui-serif,Georgia,Cambria,"Times New Roman",Times,serif;
+  --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit}
+header{position:sticky;top:0;z-index:20;background:var(--hdr);color:var(--hdrtx);box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);padding:0 14px;padding-top:env(safe-area-inset-top)}
+.hrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:60px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--hdrtx2);font-size:14px;font-weight:500;white-space:nowrap}
+.brand img{height:38px;width:auto;border-radius:2px;display:block}
+.brand b{color:#fff;font-family:var(--serif);font-weight:600;font-size:17px;letter-spacing:-.3px}
+.sp{flex:1}
+.seg{display:inline-flex;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:2px}
+.seg button{border:0;background:transparent;color:var(--hdrtx);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12.5px;font-weight:500}
+.seg button.on{background:var(--pri);color:#fff}
+.who{font-size:13px;font-weight:500;color:var(--hdrtx);cursor:pointer}
+.who:hover{color:#9fd45a}
+#live{color:var(--hdrtx2)}
+.savebtn{border:0;border-radius:6px;padding:7px 14px;font-weight:500;font-size:13px;cursor:pointer;background:var(--pri);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1)}
+.savebtn:hover{background:var(--pri2)}
+.savebtn.dirty{background:#f2c94c;color:#3e2b00}
+.savebtn:disabled{opacity:.6;cursor:default}
+nav{display:flex;gap:2px;overflow-x:auto;background:var(--hdr);border-top:1px solid rgba(255,255,255,.07);position:sticky;top:var(--hh,60px);z-index:19;scrollbar-width:none;padding:0 8px}
+nav::-webkit-scrollbar{display:none}
+nav button{border:0;background:none;padding:10px 12px;cursor:pointer;color:var(--hdrtx);white-space:nowrap;border-bottom:3px solid transparent;font-size:13.5px;font-weight:500}
+nav button:hover{color:#9fd45a}
+nav button.on{color:#fff;border-bottom-color:var(--pri)}
+main{padding:16px;max-width:1300px;margin:0 auto}
+.banner{border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:13px}
+.banner.warn{background:#fdf6e3;border:1px solid #efd9a0;color:#5d4300}
+.banner.info{background:var(--g3);border:1px solid #cfe3b3;color:var(--gdk)}
+.banner.err{background:#fbeceb;border:1px solid #efc4bf;color:#7b1d12}
+.muted{color:var(--tx3)}
+.small{font-size:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h3{margin:0;font-family:var(--serif);font-size:16px;font-weight:600;letter-spacing:-.3px;color:var(--tx);padding:11px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 .small,.card h3 .muted{font-family:var(--sans);letter-spacing:0}
+.pad{padding:12px 14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.chip{cursor:pointer;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:600;border:0;user-select:none}
+.chip.sel{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--tx)}
+.c1{background:var(--r1);color:#fff}.c2{background:var(--r2);color:#fff}.c3{background:var(--r3);color:#fff}
+.c4{background:var(--ok);color:var(--okt)}.c5{background:var(--muted);color:var(--tx4)}.c6{background:var(--muted);color:var(--tx3)}.c7{background:#eceef3;color:#5a6680}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.filters select,.filters input{padding:7px 10px;border:1px solid var(--bd2);border-radius:6px;background:#fff;font-size:13px;max-width:100%;color:var(--tx)}
+.filters select:focus,.filters input:focus,.form input:focus,.form select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 2px rgba(125,184,43,.35)}
+.tw{overflow:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%}
+th,td{padding:7px 9px;border-bottom:1px solid #ece9df;text-align:left;vertical-align:middle}
+th{font-size:12px;color:var(--tx3);background:#faf9f5;position:sticky;top:0;z-index:2;white-space:nowrap;font-weight:600}
+th.s{cursor:pointer}
+th.s:hover{color:var(--tx)}
+td.n,th.n{text-align:right;white-space:nowrap}
+td.fn{font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1;cursor:pointer;color:var(--g1)}
+th.fn{position:sticky;left:0;z-index:3}
+tr:hover td{background:#fbfaf6}
+tr:hover td.fn{background:#fbfaf6}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.sub{font-size:11px;color:var(--g1);font-weight:500}
+.grid td{padding:3px 2px;text-align:center;min-width:42px}
+.grid td.fn,.grid th.fn{text-align:left;padding-left:10px;min-width:150px}
+.grid th{text-align:center;font-size:11px;padding:5px 2px}
+.grid .today{background:#f3f8ea}
+.gp{display:inline-block;min-width:26px;border-radius:5px;padding:2px 4px;font-size:11px;font-weight:700;cursor:pointer}
+.gp.a{background:var(--pri);color:#fff}.gp.a.low{background:#c9d6b3}
+.gp.p{background:var(--r3);color:#fff}
+.gp.d{background:var(--r1);color:#fff;border-radius:50%;min-width:20px;height:20px;line-height:16px;padding:2px}
+.gp.e{color:#cfcbbd;font-weight:400}
+.btn{border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:6px;padding:8px 16px;cursor:pointer;font-weight:500;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);transition:background .15s}
+.btn:hover{background:var(--pri2);border-color:var(--pri2)}
+.btn.o{background:#fff;color:var(--tx);border-color:var(--bd2);box-shadow:none}
+.btn.o:hover{background:var(--muted)}
+.btn.r{background:#fff;color:var(--r1);border-color:#e6bfba;box-shadow:none}
+.btn.r:hover{background:#fbeceb}
+.btn.sm{padding:5px 11px;font-size:12.5px}
+.x{border:0;background:none;color:var(--r1);cursor:pointer;font-size:15px;padding:2px 6px}
+.lnk{color:var(--g1);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.form{display:grid;gap:12px}
+.form label{display:block;font-size:14px;font-weight:500;color:var(--tx2);margin-bottom:5px}
+.form input,.form select{width:100%;padding:10px 12px;border:1px solid var(--bd2);border-radius:6px;font-size:16px;background:#fff;color:var(--tx)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:11px 14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.kpi .l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--g1)}
+.kpi .v{font-family:var(--serif);font-weight:600;font-size:24px;letter-spacing:-.6px;color:var(--tx)}
+.kpi .s{font-size:12px;color:var(--tx3)}
+.bar{height:8px;background:var(--muted);border-radius:4px;overflow:hidden;min-width:70px}
+.bar i{display:block;height:100%;background:var(--pri)}
+.bar i.hi{background:var(--r2)}.bar i.over{background:var(--r1)}
+.modal{position:fixed;inset:0;background:rgba(32,32,30,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:12px 12px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 10px 25px rgba(0,0,0,.15)}
+@media(min-width:700px){.modal{align-items:center}.sheet{border-radius:12px}}
+.sheet h2{margin:0 0 4px;font-size:22px;color:var(--tx);font-family:var(--serif);font-weight:600;letter-spacing:-.6px}
+.plist div{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px dashed #ece9df;font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--hdr);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:60;opacity:.97;max-width:90vw;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.gapl{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 14px}
+.gapl div{display:flex;align-items:center;gap:6px}
+.gapl input{width:64px;padding:6px;border:1px solid var(--bd2);border-radius:6px}
+.loading{padding:40px;text-align:center;color:var(--tx3)}
+/* sign-in screen — same as the Day to Day Work App login */
+.login{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+.login .box{background:#fff;border-radius:12px;width:100%;max-width:352px;padding:22px 19px 19px;box-shadow:0 1px 3px rgba(0,0,0,.06);text-align:center}
+.login img{height:43px;margin:0 auto 14px;display:block}
+.login .tag{font-size:10px;font-weight:800;letter-spacing:3px;color:var(--g1);text-transform:uppercase;margin:0 0 4px;line-height:1.3}
+.login h1{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:-.6px;color:var(--tx);margin:0 0 4px}
+.login .s1{font-size:14px;color:var(--tx3)}
+.login .s2{font-size:12px;color:var(--tx4);margin:8px 0 22px}
+.login label{display:block;text-align:left;font-size:14px;font-weight:500;color:var(--tx2);margin-bottom:6px}
+.login input{width:100%;padding:8px 12px;border:1px solid var(--bd2);border-radius:6px;font-size:16px;margin-bottom:12px}
+.login input:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 2px rgba(125,184,43,.35)}
+.login .btn{width:100%;padding:8px 16px;font-size:14px}
+.login .err{color:var(--r1);font-size:12.5px;min-height:16px;text-align:left;margin:-6px 0 6px}
+@media(max-width:600px){main{padding:10px}th,td{padding:6px 6px}.hide-m{display:none}.brand b{font-size:15px}.brand img{height:32px}.hrow{min-height:54px;gap:8px}}
+</style>
+</head>
+<body>
+<header id="hdr">
+  <div class="hrow">
+    <div class="brand"><img src="https://abreys.app/abreys-logo.png" alt="Abreys" onerror="this.style.display='none'"><b>Irrigation</b></div>
+    <div class="seg" id="seasonSeg"></div>
+    <div class="sp"></div>
+    <span class="small" id="live" style="opacity:.9"></span><span class="who" id="who" onclick="signIn()"></span>
+    <button class="savebtn" id="saveBtn" onclick="save(false)">Saved</button>
+  </div>
+</header>
+<nav id="nav"></nav>
+<main id="main"><div class="loading">Loading fields from FieldPlan…</div></main>
+<div id="modalHost"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   ABREYS IRRIGATION — v1 (10/11/26)
+   Masters (re-read every load, never copied): FieldPlan.html (fields, estates,
+   zones, cropping, water rates, isOurs/zone rules) and Omnia via the relay
+   (varieties, onion types, working areas, field names).
+   This app only stores irrigation records + its own settings, keyed by Omnia oid
+   (fallback estate|field), in irr_data.json via the relay. It publishes
+   irr_live.json (the FieldPlan Water-page contract) on every save.
+   RULE: a pass of 5mm or less never counts — not for apps, totals or the countdown.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var RELAY=new URLSearchParams(location.search).get('relay')||'https://fieldplan-relay.matt-6c6.workers.dev/';  // ?relay= only for testing
+var RAW='https://raw.githubusercontent.com/matthewabrey/Abrey-Cropping/main/';
+var QS=new URLSearchParams(location.search);
+var FP_URL=QS.get('fp')||(RAW+'FieldPlan.html');
+var LIVE_YR='2027';            // current season = harvest 2027
+var IRR_CROPS=['Potatoes','Salad Potatoes','Seed Potatoes','Carrots','Parsnips','Onions'];
+var AC_PER_HA=2.471, GAL_PER_ACIN=22610.67, M3_PER_ACIN=102.79, MIN_MM=5;
+var MONTHS=['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'];
+var MN=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ── state ─────────────────────────────────────────────────────────────── */
+var FP=null;              // {F,WC,WC_VAR,WATER_CFG,USERS,src,t}
+var FN=null;              // FieldPlan's own gc/isOurs/wcRate/zoneFields, run against FP
+var OMV={};               // Omnia variety/type per oid per year (same shape as FieldPlan's _omVar)
+var OMT=null;             // when Omnia last loaded
+var SERVER=null;          // last saved irr_data.json
+var LOCAL=null;           // working copy = SERVER + unsaved changes
+var PEND={f:{},o:{},del:{},cfg:0};
+var R26=null;             // irr_2026.json (last season's records)
+var SRC={fp:'',om:'',data:''};
+var S={season:LIVE_YR,view:'plan',supEst:'',staffAs:'',est:'',area:'',crop:'',vr:'',st:'',q:'',sortK:'',sortD:1,gOff:0,asAt:'2026-07-15',zoneOnly:''};
+var _s0=null;try{var _s=JSON.parse(localStorage.getItem('irr_ui')||'null');_s0=_s;if(_s)['view','est','crop','asAt'].forEach(function(k){if(_s[k]!=null)S[k]=_s[k];});}catch(e){}
+
+/* ── small helpers ─────────────────────────────────────────────────────── */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function jsq(s){return "decodeURIComponent('"+encodeURIComponent(s)+"')";}
+function pad(n){return (n<10?'0':'')+n;}
+function isoOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function todayIso(){return S.season===LIVE_YR?isoOf(new Date()):S.asAt;}
+function addDays(iso,n){var d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return isoOf(d);}
+function dDiff(a,b){return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);}
+function dm(iso){return iso?iso.slice(8,10)+'/'+iso.slice(5,7):'';}
+function fmt(n,dp){if(n==null||isNaN(n))return '—';return Number(n).toLocaleString('en-GB',{minimumFractionDigits:dp||0,maximumFractionDigits:dp||0});}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function newId(){var u=user();return Date.now().toString(36)+Math.random().toString(36).slice(2,5)+(u?u.emp:'');}
+function toast(t){var el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(function(){el.remove();},2600);}
+function user(){try{return JSON.parse(localStorage.getItem('fp_user')||'null');}catch(e){return null;}}
+function saveUi(){try{localStorage.setItem('irr_ui',JSON.stringify({view:S.view,est:S.est,crop:S.crop,asAt:S.asAt}));}catch(e){}}
+
+/* ── reading FieldPlan's source: bracket matching that respects strings/comments ── */
+function scanEnd(s,start,code){
+  var depth=0,q=null;
+  for(var i=start;i<s.length;i++){
+    var c=s[i];
+    if(q){if(c==='\\'){i++;continue;}if(c===q)q=null;continue;}
+    if(c==='"'||c==="'"||c==='`'){q=c;continue;}
+    if(code&&c==='/'&&s[i+1]==='/'){i=s.indexOf('\n',i);if(i<0)return -1;continue;}
+    if(code&&c==='/'&&s[i+1]==='*'){i=s.indexOf('*/',i+2)+1;continue;}
+    if(c==='{'||c==='['||c==='(')depth++;
+    else if(c==='}'||c===']'||c===')'){depth--;if(depth===0)return i;}
+  }
+  return -1;
+}
+function grabVal(h,re){
+  var m=re.exec(h);if(!m)throw new Error('not found: '+re);
+  var b=m.index+m[0].length-1, e=scanEnd(h,b,false);
+  return JSON.parse(h.slice(b,e+1));
+}
+function grabFn(h,name){
+  var i=h.indexOf('function '+name+'(');if(i<0)throw new Error('function '+name+' not found');
+  var b=h.indexOf('{',h.indexOf(')',i)), e=scanEnd(h,b,true);
+  return h.slice(i,e+1);
+}
+function parseFieldPlan(h){
+  return {
+    F:grabVal(h,/const F\s*=\s*\[/),
+    WC:grabVal(h,/var WC\s*=\s*\{/),
+    WC_VAR:grabVal(h,/var WC_VAR\s*=\s*\{/),
+    WATER_CFG:grabVal(h,/var WATER_CFG\s*=\s*\{/),
+    USERS:grabVal(h,/var USERS\s*=\s*\[/),
+    src:['gc','isOurs','wcRate','zoneFields'].map(function(n){return grabFn(h,n);}).join('\n'),
+    t:Date.now()
+  };
+}
+function buildFns(){
+  // Run FieldPlan's OWN rules (isOurs, crop lookup, water rate, zone membership) so they never drift.
+  try{
+    var mk=new Function('F','WC','WC_VAR','_omVar','return (function(){'+FP.src+'\nreturn {gc:gc,isOurs:isOurs,wcRate:wcRate,zoneFields:zoneFields};})();');
+    FN=mk(FP.F,FP.WC,FP.WC_VAR,OMV);
+  }catch(e){
+    console.error('FieldPlan rules failed, using fallback',e);
+    FN={gc:function(f,y){return y<='2026'?(f.history[y]||''):(f.plan[y]||'');},
+        isOurs:function(f,y){return IRR_CROPS.indexOf(FN.gc(f,y))>=0;},
+        wcRate:function(f,y){return FP.WC[FN.gc(f,y)];},
+        zoneFields:function(z){return FP.F.filter(function(f){return f.estate===z.estate;});}};
+    SRC.rulesErr=String(e.message||e);
+  }
+}
+
+/* ── Omnia (via relay) ─────────────────────────────────────────────────── */
+function parseCsv(t){
+  if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);
+  var rows=[],cur=[],fv='',q=false,head=null;
+  function end(){cur.push(fv);fv='';if(cur.length>1||cur[0]!==''){if(!head)head=cur;else{var o={};for(var j=0;j<head.length;j++)o[head[j]]=cur[j]||'';rows.push(o);}}cur=[];}
+  for(var i=0;i<t.length;i++){var c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){fv+='"';i++;}else q=false;}else fv+=c;}
+    else if(c==='"')q=true; else if(c===','){cur.push(fv);fv='';}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;end();} else fv+=c;}
+  if(fv!==''||cur.length)end();
+  return rows;
+}
+function applyOmniaFields(rows){
+  var byId={};
+  rows.forEach(function(r){if(r.HoldingId!=='15859')return;byId[r.FieldId]={n:r.FieldName,ha:parseFloat(r.WorkingArea||'')||0};});
+  FP.F.forEach(function(f){var o=f.oid&&byId[f.oid];if(!o)return;
+    if(o.n)f.field=o.n;
+    if(o.ha>0.01&&Math.abs(o.ha-f.ha)>0.005&&!(f.estate==='Genevieve'&&o.ha>100))f.ha=Math.round(o.ha*100)/100; // Genevieve "20" 137ha Omnia error ignored
+  });
+}
+function applyOmniaCropping(rows){
+  Object.keys(OMV).forEach(function(k){delete OMV[k];});
+  rows.forEach(function(r){
+    if(r.HoldingId!=='15859'||!r.VarietyName)return;
+    var a=parseFloat(r.Area||'')||0; if(a<0.5)return;
+    if(/cover crop|stewardship|sfi|margin/i.test(r.CropName||''))return;
+    var o=OMV[r.FieldId]||(OMV[r.FieldId]={});
+    var prev=o[r.Year], dd=(r.CropDescr||'').trim();
+    if(!prev){o[r.Year]={v:r.VarietyName,a:a,c:r.CropName,d:dd,xs:[]};}
+    else{var isOn=prev.c&&(prev.c.indexOf('Onion')>=0||prev.c==='Shallots');
+      var tx=(isOn&&dd)?dd:r.VarietyName, t0=(isOn&&prev.d)?prev.d:prev.v;
+      if(tx&&tx!==t0&&prev.xs.indexOf(tx)<0)prev.xs.push(tx);}
+  });
+}
+async function loadOmnia(){
+  var u=user(); if(!u){SRC.om='sign in to load Omnia varieties';return;}
+  try{
+    var r1=await fetch(RELAY+'omnia?file=Fields.csv&emp='+encodeURIComponent(u.emp));
+    if(r1.ok)applyOmniaFields(parseCsv(await r1.text()));
+    var r2=await fetch(RELAY+'omnia?file=Cropping.csv&emp='+encodeURIComponent(u.emp));
+    if(!r2.ok)throw new Error('HTTP '+r2.status);
+    applyOmniaCropping(parseCsv(await r2.text()));
+    OMT=Date.now(); SRC.om='Omnia loaded '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    try{localStorage.setItem('irr_om_cache',JSON.stringify({t:OMT,v:OMV}));}catch(e){}
+  }catch(e){SRC.om='Omnia not reachable ('+e.message+') — using last copy';}
+}
+
+/* ── fields, crop, variety ─────────────────────────────────────────────── */
+function key(f){return (f.oid&&f.oid!=='none')?String(f.oid):(f.estate+'|'+f.field);}
+var BYKEY={};
+function indexF(){BYKEY={};FP.F.forEach(function(f){var k=key(f);if(!BYKEY[k])BYKEY[k]=f;});}
+function is26(){return S.season!==LIVE_YR;}
+function crop(f){
+  if(is26()){var r=R26&&R26.fields[key(f)];return r?r.c:FN.gc(f,'2026');}
+  return FN.gc(f,LIVE_YR);
+}
+function subOf(f){
+  if(is26()){var r=R26&&R26.fields[key(f)];if(r&&r.t)return r.t.replace(/\s*-?\s*finished\s*/i,'');}
+  var o=f.oid&&OMV[f.oid]&&OMV[f.oid][S.season]; if(!o)return '';
+  var c=crop(f), s=(c==='Onions'&&o.d)?o.d:(o.v||'');
+  return s+(o.xs&&o.xs.length?' / '+o.xs.join(' / '):'');
+}
+function sub1(f){return subOf(f).split(' / ')[0];}
+function areaOf(f){return (f.zone&&f.zone!==f.estate&&f.zone!==f.farm)?f.zone:(f.farm||'');}
+function irrHa(f){var k=key(f),o=LOCAL&&LOCAL.cfg&&LOCAL.cfg.irrHa&&LOCAL.cfg.irrHa[k];return o?+o:null;}
+function acres(f){ // irrigated acres: 2026 = the spreadsheet's acres; live = irrigated-area override if set, else FieldPlan/Omnia ha
+  if(is26()){var r=R26&&R26.fields[key(f)];if(r&&r.a)return +r.a;}
+  var o=irrHa(f);return (o!=null?o:(+f.ha||0))*AC_PER_HA;}
+function setIrrHa(k,v){if(!canEdit())return;var c=cfg();c.irrHa=c.irrHa||{};if(v===''||!(+v>0))delete c.irrHa[k];else c.irrHa[k]=+v;var f=BYKEY[k];if(LOCAL.log[k])touch(f);cfgTouch();openField(k);}
+function liveEst(f){return (f.estate==='Blakeney'||f.estate==='Wretham')?'Blakeney_Wretham':String(f.estate).replace(/ /g,'_');}
+function cfg(){return LOCAL.cfg||(LOCAL.cfg={gap:{},add:{},hide:{}});}
+function log(){
+  if(is26()){if(!R26)return {};if(!R26._log){R26._log={};Object.keys(R26.fields).forEach(function(k){R26._log[k]={p:R26.fields[k].p.map(function(x,i){return [x[0],x[1],x[1],'xl','x'+i];})};});}return R26._log;}
+  return LOCAL.log||(LOCAL.log={});
+}
+function fieldList(){
+  if(is26()){return Object.keys((R26||{fields:{}}).fields).map(function(k){return BYKEY[k];}).filter(Boolean);}
+  var C=cfg(), out=[], seen={};
+  FP.F.forEach(function(f){
+    var k=key(f); if(seen[k])return;
+    var c=FN.gc(f,LIVE_YR), auto=IRR_CROPS.indexOf(c)>=0&&f.ha>0&&safeOurs(f,LIVE_YR);
+    if((auto||C.add[k]||(LOCAL.log[k]&&(LOCAL.log[k].p||[]).length))&&!C.hide[k]){seen[k]=1;out.push(f);}
+  });
+  return out;
+}
+function safeOurs(f,y){try{return FN.isOurs(f,y);}catch(e){return true;}}
+function rate(f){try{return FN.wcRate(f,S.season);}catch(e){return FP.WC[crop(f)];}}
+
+/* ── warning days (look-back): variety/type line beats crop line ───────── */
+function gapFor(c,sub){
+  var g=cfg().gap||{};
+  if(sub&&g[c+'|'+sub]!=null&&g[c+'|'+sub]!=='')return +g[c+'|'+sub];
+  if(g[c]!=null&&g[c]!=='')return +g[c];
+  return null;
+}
+
+/* ── the 1/2/3 status for one field ────────────────────────────────────── */
+function stat(f){
+  var c=crop(f),k=key(f),L=log()[k]||{},T=todayIso();
+  var p=(L.p||[]).filter(function(x){return x[0]<=T||!is26();}).slice().sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:0;});
+  var last=null,mm=0,apps=0;
+  p.forEach(function(x){var ap=+x[2]||0;if(ap>MIN_MM){mm+=ap;apps++;if(!last||x[0]>last)last=x[0];}});
+  var perAc=mm/25.4, sb=sub1(f), gap=gapFor(c,sb);
+  var days=last?dDiff(last,T):null, st=is26()?(fin26(f)?9:0):(L.st||0);
+  var g=(is26()?[]:(L.g||[])).slice().sort(function(a,b){return a[0]<b[0]?-1:1;});
+  var nextProg=null; g.forEach(function(x){if(x[0]>=T&&(!nextProg||x[0]<nextProg))nextProg=x[0];});
+  var dueIso=(last&&gap!=null)?addDays(last,gap):null;
+  var code,lab;
+  if(st===9){code=7;lab='Finished for season';}
+  else if(st===2){code=2;lab='2 · Definitely start'+(L.mm2?' · '+L.mm2+'mm':'');}
+  else if(nextProg){code=3;lab='3 · Programme '+dm(nextProg)+(nextProg===T?' (today)':'');}
+  else if(st===3){code=3;lab='3 · On programme';}
+  else if(last==null){code=6;lab='Not started';}
+  else if(gap==null){code=5;lab='Set warning days';}
+  else if(days>=gap){code=1;lab='1 · Due — '+days+'d since ('+gap+'d set)';}
+  else{code=4;lab='OK · due in '+(gap-days)+'d';}
+  return {c:c,k:k,L:L,p:p,g:g,nextProg:nextProg,dueIso:dueIso,last:last,days:days,gap:gap,perAc:perAc,mm:mm,apps:apps,st:st,mm2:L.mm2,code:code,lab:lab,sub:sb};
+}
+function badge(s){return '<span class="badge c'+s.code+'">'+esc(s.lab)+'</span>';}
+var ORD={1:0,2:1,3:2,5:3,4:4,6:5,7:6};
+function fin26(f){var r=R26&&R26.fields[key(f)];return !!(r&&/finish/i.test(r.t||''));}
+
+/* ── zones, costs, totals ──────────────────────────────────────────────── */
+var ZMAP=null,ZMAPYR='';
+function zoneOf(f){
+  var yr=S.season;
+  if(!ZMAP||ZMAPYR!==yr){ZMAP={};ZMAPYR=yr;
+    (FP.WATER_CFG.zones||[]).forEach(function(z,zi){try{FN.zoneFields(z,yr).forEach(function(ff){var k=key(ff);if(ZMAP[k]==null)ZMAP[k]=zi;});}catch(e){}});}
+  var zi=ZMAP[key(f)]; return zi==null?null:FP.WATER_CFG.zones[zi];
+}
+function costOf(f,acin){var z=zoneOf(f);if(!z)return 0;var r=+z.rate||0;return z.basis==='app'?r*acin/0.7874:r*acin;}
+function passTotals(f,s){ // >5mm only
+  var ac=acres(f),m={},tot={apps:0,acin:0};
+  s.p.forEach(function(x){var ap=+x[2]||0;if(ap<=MIN_MM)return;var mo=MN[+x[0].slice(5,7)];var a=ap/25.4*ac;
+    var o=m[mo]||(m[mo]={apps:0,acin:0});o.apps++;o.acin+=a;tot.apps++;tot.acin+=a;});
+  tot.gal=tot.acin*GAL_PER_ACIN;tot.m3=tot.acin*M3_PER_ACIN;tot.cost=costOf(f,tot.acin);tot.m=m;return tot;
+}
+function liveJson(){ // the FieldPlan Water-page contract (current season, m³, >5mm passes)
+  var est={},mon={},fields=[],L=LOCAL.log||{};
+  Object.keys(L).forEach(function(k){
+    var f=BYKEY[k],rec=L[k]; var ac=f?acres(f):(+rec.ac||0), e=f?liveEst(f):(rec.e||''); if(!ac||!e)return;
+    (rec.p||[]).forEach(function(x){var ap=+x[2]||0;if(ap<=MIN_MM)return;var m3=ap/25.4*ac*M3_PER_ACIN;
+      est[e]=(est[e]||0)+m3;var mo=MN[+x[0].slice(5,7)];mon[mo]=(mon[mo]||0)+m3;fields.push([k,x[0],+x[1]||0,ap]);});
+  });
+  Object.keys(est).forEach(function(k){est[k]=Math.round(est[k]);});Object.keys(mon).forEach(function(k){mon[k]=Math.round(mon[k]);});
+  return {asOf:new Date().toISOString(),season:LIVE_YR,est:est,mon:mon,fields:fields};
+}
+
+/* ── editing (live season only) ────────────────────────────────────────── */
+// Every change gets a sequence number; a save only clears what it actually sent, so
+// edits made while a save is in flight are never lost. Everything autosaves (debounced).
+var SEQ=0;
+function rec(f){var k=key(f),L=LOCAL.log||(LOCAL.log={});return L[k]||(L[k]={});}
+function markField(f){var k=key(f),r=rec(f);r.e=liveEst(f);r.ac=Math.round(acres(f)*100)/100;r.n=f.field;PEND.f[k]=++SEQ;}
+function touch(f){markField(f);persistShadow();schedSave();render();}
+function persistShadow(){
+  try{var lg={},op={};Object.keys(PEND.f).forEach(function(k){lg[k]=LOCAL.log[k]||null;});
+    Object.keys(PEND.o||{}).forEach(function(k){op[k]=(LOCAL.ops||{})[k]||null;});
+    localStorage.setItem('irr_shadow',JSON.stringify({pend:PEND,log:lg,ops:op,cfg:PEND.cfg?LOCAL.cfg:null,seq:SEQ,t:Date.now()}));}catch(e){}
+}
+function nPending(){return Object.keys(PEND.f).length+Object.keys(PEND.o||{}).length+(PEND.cfg?1:0);}
+function cfgTouch(){PEND.cfg=++SEQ;persistShadow();schedSave();render();}
+function canEdit(){if(is26()){toast('2026 is the records season — read only');return false;}return true;}
+function setSt(k,v){if(!canEdit())return;var f=BYKEY[k],r=rec(f);r.st=+v||0;if(r.st===2&&!r.mm2)r.mm2=+(document.getElementById('progMm')||{}).value||20;touch(f);}
+function setMm2(k,v){if(!canEdit())return;var f=BYKEY[k];rec(f).mm2=parseFloat(v)||0;touch(f);}
+function progToggle(k,iso){
+  if(!canEdit())return;var f=BYKEY[k],r=rec(f);r.g=r.g||[];
+  var ix=-1;r.g.forEach(function(x,j){if(x[0]===iso)ix=j;});
+  if(ix>=0)r.g.splice(ix,1);else r.g.push([iso,+(document.getElementById('progMm')||{}).value||20]);
+  touch(f);
+}
+function addPass(k,iso,told,ap){
+  if(!canEdit())return false;var f=BYKEY[k];if(!f)return false;
+  if(!iso){toast('Pick a date');return false;}if(isNaN(ap)){toast('Enter the applied mm');return false;}
+  var u=user(),r=rec(f);
+  (r.p=r.p||[]).push([iso,+told||0,+ap,u?u.emp:'',newId()]);
+  r.g=(r.g||[]).filter(function(x){return x[0]!==iso;});   // the pass fulfils that day's booking
+  if(+ap>MIN_MM&&(r.st===2||r.st===3))r.st=0;              // a counting pass resets 2/3 to auto
+  touch(f);toast('Logged '+ap+'mm on '+f.field+' '+dm(iso)+(+ap<=MIN_MM?' (5mm or less — not counted)':''));return true;
+}
+function delPass(k,id){
+  if(!canEdit())return;var f=BYKEY[k],r=rec(f);if(!confirm('Delete this pass?'))return;
+  r.p=(r.p||[]).filter(function(x){return x[4]!==id;});
+  (PEND.del[k]=PEND.del[k]||[]).push(id);touch(f);openField(k);
+}
+
+/* ── load / save (relay) ───────────────────────────────────────────────── */
+var RAW_DATA='https://raw.githubusercontent.com/matthewabrey/Abrey-Cropping/irrigation-data/irr_data.json';
+function emptyData(){return {v:1,season:LIVE_YR,cfg:{gap:{},add:{},hide:{},irrHa:{},runs:{},runLen:{},mach:[],team:{}},log:{},ops:{}};}
+function normData(j){
+  if(!j.cfg)j.cfg={};['gap','add','hide','irrHa','runs','runLen','team'].forEach(function(x){if(!j.cfg[x])j.cfg[x]={};});
+  if(!j.cfg.mach)j.cfg.mach=[];if(!j.log)j.log={};if(!j.ops)j.ops={};return j;
+}
+// LOCAL = latest server copy + anything still pending on this device
+function rebase(prev){
+  LOCAL=clone(SERVER);
+  Object.keys(PEND.f).forEach(function(k){if(prev.log&&prev.log[k])LOCAL.log[k]=prev.log[k];});
+  Object.keys(PEND.o||{}).forEach(function(k){if(prev.ops&&prev.ops[k])LOCAL.ops[k]=prev.ops[k];});
+  if(PEND.cfg&&prev.cfg)LOCAL.cfg=prev.cfg;
+}
+async function fetchServer(){
+  var u=user(),j=null;
+  try{var r=await fetch(RELAY+'irr-data?emp='+encodeURIComponent(u?u.emp:''),{cache:'no-store'});
+    if(r.ok){var o=await r.json();if(o&&o.ok){j=o.data||emptyData();SRC.data='saved data (live)';SRC.relay=true;LIVE_OK=Date.now();window._lastPull=Date.now();}}}catch(e){}
+  if(!j){try{var r2=await fetch(RAW_DATA+'?t='+Date.now());if(r2.ok){j=await r2.json();SRC.data='saved data (published copy, may lag ~5 min)';}}catch(e){}}
+  return j;
+}
+async function loadData(){
+  var j=await fetchServer();
+  if(!j){j=emptyData();SRC.data='no saved data yet';}
+  SERVER=normData(j);
+  var prev={log:{},ops:{},cfg:null};
+  try{var sh=JSON.parse(localStorage.getItem('irr_shadow')||'null');
+    if(sh&&sh.pend){PEND=sh.pend;PEND.del=PEND.del||{};PEND.o=PEND.o||{};SEQ=sh.seq||100;
+      prev={log:sh.log||{},ops:sh.ops||{},cfg:sh.cfg};}}catch(e){}
+  rebase(prev);
+}
+async function pull(){ // pick up everyone else's changes
+  if(SAVING||!LOCAL)return;window._lastPull=Date.now();
+  var u=user(),j=null;
+  try{var r=await fetch(RELAY+'irr-data?emp='+encodeURIComponent(u?u.emp:'')+'&since='+encodeURIComponent(SERVER&&SERVER.updated||''),{cache:'no-store'});
+    if(r.ok){var o=await r.json();if(o&&o.ok){LIVE_OK=Date.now();if(o.same){paintLive();return;}j=o.data;}}}catch(e){}
+  if(!j){paintLive();return;}
+  if(SAVING)return;SERVER=normData(j);rebase(LOCAL);softRender();
+}
+var LIVE_OK=0;
+function paintLive(){var el=document.getElementById('live');if(!el)return;
+  var ok=LIVE_OK&&Date.now()-LIVE_OK<70000&&navigator.onLine;
+  el.innerHTML='<span style="color:'+(ok?'#7CFC9A':'#ffd54f')+'">●</span> '+(ok?'Live':(navigator.onLine?'Connecting…':'No signal — saving on phone'));
+  el.title=LIVE_OK?'last update '+new Date(LIVE_OK).toLocaleTimeString('en-GB'):'';}
+var SAVING=false,_saveT=null,_saveErr='';
+function schedSave(){clearTimeout(_saveT);_saveT=setTimeout(function(){save(true);},2500);}
+async function save(auto){
+  if(SAVING){schedSave();return;}
+  if(!nPending()){if(!auto)toast('All saved');return;}
+  var u=user();if(!u){signIn();_saveErr='sign in to save';render();return;}
+  var sent={f:Object.assign({},PEND.f),o:Object.assign({},PEND.o),cfg:PEND.cfg,del:clone(PEND.del)};
+  var body={emp:u.emp,season:LIVE_YR,fields:{},ops:{},del:sent.del,cfg:sent.cfg?LOCAL.cfg:null};
+  Object.keys(sent.f).forEach(function(k){body.fields[k]=LOCAL.log[k]||null;});
+  Object.keys(sent.o).forEach(function(k){body.ops[k]=LOCAL.ops[k]||null;});
+  SAVING=true;render();
+  try{
+    var res=await fetch(RELAY+'irr-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var out={};try{out=await res.json();}catch(e){}
+    if(res.status===403)throw new Error(out.error||'your employee number isn’t set up to record irrigation — ask Matthew to add you under Settings → Team');
+    if(res.status===404||(!res.ok&&!out.error))throw new Error('the relay has no irrigation route yet — entries are kept on this device');
+    if(!res.ok||!out.ok)throw new Error(out.error||('relay error '+res.status));
+    // clear only what this save carried and hasn't changed since
+    Object.keys(sent.f).forEach(function(k){if(PEND.f[k]===sent.f[k])delete PEND.f[k];});
+    Object.keys(sent.o).forEach(function(k){if(PEND.o[k]===sent.o[k])delete PEND.o[k];});
+    if(PEND.cfg===sent.cfg)PEND.cfg=0;
+    Object.keys(sent.del).forEach(function(k){if(!PEND.f[k])delete PEND.del[k];});
+    LIVE_OK=Date.now();SERVER=normData(out.data);rebase(LOCAL);persistShadow();if(!nPending())localStorage.removeItem('irr_shadow');
+    _saveErr='';if(!auto)toast('Saved ✓');
+  }catch(e){_saveErr=navigator.onLine?e.message:'no signal';if(!auto)toast('Not saved yet: '+_saveErr);}
+  SAVING=false;render();
+  if(nPending()&&!_saveErr)schedSave();
+}
+window.addEventListener('online',function(){paintLive();if(nPending())save(true);pull();});window.addEventListener('offline',paintLive);
+// LIVE: every open screen re-reads the shared data every 20 s (and on waking / regaining signal),
+// and clocks/countdowns tick every 30 s. Re-draws wait while someone is typing.
+var LIVE_MS=20000;
+setInterval(function(){if(document.visibilityState!=='visible'||!LOCAL)return;
+  if(nPending()&&_saveErr&&navigator.onLine&&Date.now()-(window._lastRetry||0)>30000){window._lastRetry=Date.now();save(true);}
+  if(Date.now()-(window._lastPull||0)>=LIVE_MS)pull();
+},5000);
+setInterval(function(){if(document.visibilityState==='visible'&&LOCAL)softRender();},30000);
+function typing(){var a=document.activeElement;return a&&document.getElementById('main').contains(a)&&/INPUT|SELECT|TEXTAREA/.test(a.tagName);}
+function softRender(){if(typing()){window._needRender=1;return;}window._needRender=0;render();}
+document.addEventListener('focusout',function(){setTimeout(function(){if(window._needRender&&!typing())softRender();},200);});
+
+/* ── sign-in (shares FieldPlan's sign-in on the same site) ─────────────── */
+function signIn(after,gate){
+  var u=user();
+  if(gate||!u){
+    document.getElementById('modalHost').innerHTML='<div class="login"><div class="box">'
+      +'<img src="https://abreys.app/abreys-logo.png" alt="Abreys" onerror="this.style.display=\'none\'">'
+      +'<p class="tag">Safety · Ownership · Team · Driven · Excellence</p>'
+      +'<h1>Abreys Irrigation</h1><div class="s1">Enter your employee number to continue</div>'
+      +'<p class="s2">Records · Supervisor · Staff — saves automatically</p>'
+      +'<label for="lgEmp">Employee Number</label><input id="lgEmp" inputmode="numeric" autocomplete="off" placeholder="Enter employee number">'
+      +'<div id="lgErr" class="err"></div><button class="btn" id="lgGo">Login</button></div></div>';
+  }else{
+    modal('<h2>Signed in</h2><div class="muted small" style="margin-bottom:12px">You are signed in as <b>'+esc(u.name)+'</b> ('+esc(u.emp)+'). To use this phone as someone else, sign out first.</div>'
+      +'<div style="display:flex;gap:8px"><button class="btn o" onclick="closeModal()" style="flex:1">Close</button><button class="btn r" onclick="signOut()">Sign out</button></div>');
+    return;
+  }
+  var go=function(){var emp=document.getElementById('lgEmp').value.trim();var x=(FP.USERS||[]).filter(function(z){return z.emp===emp;})[0];
+    if(!x){document.getElementById('lgErr').textContent='Employee number not recognised.';return;}
+    localStorage.setItem('fp_user',JSON.stringify({name:x.name,emp:x.emp,role:x.role,ts:Date.now()}));closeModal();
+    if(typeof after==='function')after();if(LOCAL){var rr=myRole();if(rr==='sup')S.view='sup';else if(rr==='staff')S.view='staff';render();}
+    loadOmnia().then(function(){ZMAP=null;if(LOCAL)render();});};
+  document.getElementById('lgGo').onclick=go;document.getElementById('lgEmp').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
+  setTimeout(function(){var i=document.getElementById('lgEmp');if(i)i.focus();},50);
+}
+
+/* ── modal ─────────────────────────────────────────────────────────────── */
+function modal(html,locked){document.getElementById('modalHost').innerHTML='<div class="modal"'+(locked?' style="background:var(--g1)"':' onclick="if(event.target===this)closeModal()"')+'><div class="sheet">'+html+'</div></div>';}
+function signOut(){if(nPending()&&!confirm('Some changes haven’t reached the office yet. Sign out anyway? They stay on this phone.'))return;localStorage.removeItem('fp_user');closeModal();location.reload();}
+function closeModal(){document.getElementById('modalHost').innerHTML='';}
+
+/* ── filtering & sorting shared by the views ───────────────────────────── */
+function filtered(){
+  var all=fieldList(),list=[],stats=[];
+  var q=(S.q||'').toLowerCase();
+  all.forEach(function(f){
+    if(S.est&&f.estate!==S.est)return; if(S.area&&areaOf(f)!==S.area)return;
+    if(S.crop&&crop(f)!==S.crop)return; if(S.vr&&sub1(f)!==S.vr)return;
+    if(q&&String(f.field).toLowerCase().indexOf(q)<0)return;
+    var s=stat(f); if(S.st&&String(s.code)!==S.st)return;
+    list.push(f);stats.push(s);});
+  var idx=list.map(function(_,i){return i;}),sk=S.sortK,sd=S.sortD;
+  idx.sort(function(a,b){
+    var fa=list[a],fb=list[b],sa=stats[a],sb=stats[b],va,vb;
+    if(!sk){
+      if(S.view==='agro'){va=sa.days==null?-1:sa.days;vb=sb.days==null?-1:sb.days;if(va!==vb)return vb-va;}
+      else{var d=ORD[sa.code]-ORD[sb.code];if(d)return d;
+        if(sa.code===1)return (sb.days-sb.gap)-(sa.days-sa.gap);
+        if(sa.code===4)return (sa.gap-sa.days)-(sb.gap-sb.days);}
+      return fa.field<fb.field?-1:1;}
+    if(sk==='field'){va=fa.field;vb=fb.field;}
+    else if(sk==='estate'){va=fa.estate+'|'+areaOf(fa)+'|'+fa.field;vb=fb.estate+'|'+areaOf(fb)+'|'+fb.field;}
+    else if(sk==='area'){va=areaOf(fa)+'|'+fa.field;vb=areaOf(fb)+'|'+fb.field;}
+    else if(sk==='crop'){va=sa.c+'|'+sa.sub;vb=sb.c+'|'+sb.sub;}
+    else if(sk==='variety'){va=sa.sub||'~';vb=sb.sub||'~';}
+    else if(sk==='acres'){va=fa.ha;vb=fb.ha;}
+    else if(sk==='last'){va=sa.last||'';vb=sb.last||'';}
+    else if(sk==='days'){va=sa.days==null?-1:sa.days;vb=sb.days==null?-1:sb.days;}
+    else if(sk==='applied'){va=sa.perAc;vb=sb.perAc;}
+    else if(sk==='apps'){va=sa.apps;vb=sb.apps;}
+    else if(sk==='left'){var ra=rate(fa),rb=rate(fb);va=ra==null?99:ra-sa.perAc;vb=rb==null?99:rb-sb.perAc;}
+    else{va=ORD[sa.code];vb=ORD[sb.code];}
+    if(va<vb)return -sd;if(va>vb)return sd;return fa.field<fb.field?-1:1;});
+  return {all:all,list:idx.map(function(i){return list[i];}),stats:idx.map(function(i){return stats[i];})};
+}
+function sortBy(k){if(S.sortK===k)S.sortD=-S.sortD;else{S.sortK=k;S.sortD=1;}render();}
+function th(lab,k,cls){var ar=S.sortK===k?(S.sortD>0?' ▲':' ▼'):'';return '<th class="s '+(cls||'')+'" onclick="sortBy(\''+k+'\')">'+lab+ar+'</th>';}
+function setF(k,v){S[k]=v;if(k==='est')S.area='';saveUi();render();}
+function chipsHtml(all){
+  var cnt={1:0,2:0,3:0,4:0,5:0,6:0,7:0};all.forEach(function(f){cnt[stat(f).code]++;});
+  function ch(c,lab){return '<span class="chip c'+c+(S.st===String(c)?' sel':'')+'" onclick="setF(\'st\',S.st===\''+c+'\'?\'\':\''+c+'\')">'+cnt[c]+' '+lab+'</span>';}
+  return '<div class="chips">'+ch(1,'due')+ch(2,'definitely start')+ch(3,'on programme')+ch(4,'OK')+ch(6,'not started')+(cnt[7]?ch(7,'finished'):'')+(cnt[5]?ch(5,'need warning days'):'')
+    +(S.st?'<span class="lnk small" onclick="setF(\'st\',\'\')">show all</span>':'')+'</div>';
+}
+function filtersHtml(all){
+  var E={},A={},C={},V={};
+  all.forEach(function(f){E[f.estate]=1;if(!S.est||f.estate===S.est){var a=areaOf(f);if(a)A[a]=1;}C[crop(f)]=1;var v=sub1(f);if(v&&(!S.crop||crop(f)===S.crop))V[v]=1;});
+  function sel(k,lab,obj){return '<select onchange="setF(\''+k+'\',this.value)"><option value="">'+lab+'</option>'+Object.keys(obj).sort().map(function(x){return '<option'+(S[k]===x?' selected':'')+' value="'+esc(x)+'">'+esc(x)+'</option>';}).join('')+'</select>';}
+  return '<div class="filters">'+sel('est','All estates',E)+sel('area','All areas',A)+sel('crop','All crops',C)+sel('vr','All varieties / types',V)
+    +'<input placeholder="Find field…" value="'+esc(S.q)+'" oninput="S.q=this.value;clearTimeout(window._qt);window._qt=setTimeout(render,250)" style="min-width:130px">'
+    +(S.sortK?'<button class="btn o sm" onclick="S.sortK=\'\';render()">↺ default order</button>':'')+'</div>';
+}
+
+/* ── VIEW: Planner (day grid + list) ───────────────────────────────────── */
+function vPlanner(){
+  var R=filtered(),T=todayIso();
+  var start=addDays(T,-5+S.gOff*7),days=[];for(var i=0;i<13;i++)days.push(addDays(start,i));
+  var head=days.map(function(d){var wd=['Su','Mo','Tu','We','Th','Fr','Sa'][new Date(d+'T12:00:00').getDay()];
+    return '<th class="'+(d===T?'today':'')+'"'+(d<T?' style="color:var(--tx3)"':'')+'>'+wd+'<br>'+dm(d)+'</th>';}).join('');
+  var gb=R.list.map(function(f,i){
+    var s=R.stats[i],pass={},prog={};
+    s.p.forEach(function(x){pass[x[0]]=(pass[x[0]]||0)+(+x[2]||0);});s.g.forEach(function(x){prog[x[0]]=x[1];});
+    var mark=s.dueIso; if(mark&&mark<T)mark=T; if(s.code===2||s.code===3)mark=null;
+    var k=jsq(s.k);
+    var cells=days.map(function(d){var inner;
+      if(pass[d]!=null)inner='<span class="gp a'+(pass[d]<=MIN_MM?' low':'')+'" onclick="openField('+k+')" title="applied">'+fmt(pass[d],0)+'</span>';
+      else if(prog[d]!=null)inner='<span class="gp p" onclick="progToggle('+k+',\''+d+'\')" title="programmed — tap to remove">'+prog[d]+'</span>';
+      else if(mark===d)inner='<span class="gp d" onclick="progToggle('+k+',\''+d+'\')" title="predicted due — tap to programme">1</span>';
+      else if(d>=T&&!is26())inner='<span class="gp e" onclick="progToggle('+k+',\''+d+'\')">+</span>';
+      else inner='';
+      return '<td class="'+(d===T?'today':'')+'">'+inner+'</td>';}).join('');
+    return '<tr><td class="fn" onclick="openField('+k+')">'+esc(f.field)+'<div class="sub">'+esc(s.c)+(s.sub?' · '+esc(s.sub):'')+'</div>'+(is26()?'':progHtml(s.k,true))+'</td>'+cells+'</tr>';
+  }).join('');
+  var grid='<div class="card"><h3>Programme <span class="muted small" style="font-weight:400">'
+    +'<b style="color:var(--g1)">green</b> applied mm · <b style="color:var(--r3)">blue</b> programmed (tap a day) · <b style="color:var(--r1)">1</b> predicted due</span>'
+    +'<span class="sp"></span><button class="btn o sm" onclick="S.gOff--;render()">◀</button><button class="btn o sm" onclick="S.gOff=0;render()">'+(is26()?'As at':'Today')+'</button><button class="btn o sm" onclick="S.gOff++;render()">▶</button>'
+    +(is26()?'':'<span class="small muted">programme at</span><input id="progMm" type="number" value="'+(window._progMm||20)+'" onchange="window._progMm=this.value" style="width:54px;padding:4px;border:1px solid var(--bd);border-radius:5px"><span class="small muted">mm</span>')
+    +'</h3><div class="tw" style="max-height:52vh"><table class="grid"><thead><tr><th class="fn" style="text-align:left">Field</th>'+head+'</tr></thead><tbody>'
+    +(gb||'<tr><td colspan="14" class="muted pad">No fields match.</td></tr>')+'</tbody></table></div></div>';
+  var rows=R.list.map(function(f,i){
+    var s=R.stats[i],k=jsq(s.k),rt=rate(f),left=(rt!=null)?rt-s.perAc:null,r26=R26&&!is26()&&R26.fields[s.k];
+    var p26=r26?r26.p.reduce(function(a,x){return a+(x[1]>MIN_MM?x[1]:0);},0)/25.4:null;
+    return '<tr><td class="fn" onclick="openField('+k+')">'+esc(f.field)+'</td>'
+      +'<td>'+esc(f.estate)+'</td><td class="hide-m muted small">'+esc(areaOf(f))+'</td>'
+      +'<td>'+esc(s.c)+(s.sub?'<div class="sub">'+esc(subOf(f))+'</div>':'')+'</td>'
+      +'<td class="n">'+fmt(acres(f),1)+'</td>'
+      +'<td class="n">'+(s.last?dm(s.last)+' <span class="muted">('+s.days+'d)</span>':'—')+'</td>'
+      +'<td class="n">'+(s.apps||'—')+'</td>'
+      +'<td class="n">'+(s.perAc>0?s.perAc.toFixed(1)+'″':'—')+'</td>'
+      +'<td class="n" style="color:'+(left!=null&&left<0?'var(--r1)':'var(--tx2)')+'" title="planning rate '+(rt==null?'—':rt)+' ac-in/ac">'+(left!=null?left.toFixed(1)+'″':'—')+'</td>'
+      +(is26()?'':'<td class="n hide-m muted">'+(p26!=null?p26.toFixed(1)+'″':'—')+'</td>')
+      +'<td>'+badge(s)+(is26()?'':progHtml(s.k,true))+'</td>'
+      +(is26()?'':'<td style="white-space:nowrap"><select onchange="setSt('+k+',this.value)" style="padding:4px;border:1px solid var(--bd);border-radius:5px">'
+        +'<option value="0"'+(s.st!==2&&s.st!==3&&s.st!==9?' selected':'')+'>auto</option><option value="2"'+(s.st===2?' selected':'')+'>2 definitely start</option><option value="3"'+(s.st===3?' selected':'')+'>3 on programme</option><option value="9"'+(s.st===9?' selected':'')+'>finished</option></select>'
+        +(s.st===2?' <input type="number" value="'+(s.mm2||'')+'" placeholder="mm" onchange="setMm2('+k+',this.value)" style="width:52px;padding:4px;border:1px solid var(--r2);border-radius:5px" title="amount to put on">':'')+'</td>')
+      +'</tr>';
+  }).join('');
+  var list='<div class="card"><h3>Fields <span class="muted small" style="font-weight:400">'+R.list.length+' shown · tap a field to log passes · tap a heading to sort</span></h3><div class="tw" style="max-height:70vh"><table><thead><tr>'
+    +th('Field','field','fn')+th('Estate','estate')+th('Area','area','hide-m')+th('Crop / variety','crop')+th('Acres','acres','n')+th('Last pass','last','n')+th('Apps','apps','n')+th('Applied','applied','n')
+    +th('Left vs plan','left','n')+(is26()?'':'<th class="n hide-m">2026</th>')+th('Status','status')+(is26()?'':'<th>Set</th>')+'</tr></thead><tbody>'
+    +(rows||'<tr><td colspan="12" class="muted pad">No fields match.</td></tr>')+'</tbody></table></div></div>';
+  return chipsHtml(R.all)+filtersHtml(R.all)+grid+list;
+}
+
+/* ── VIEW: quick log (mobile) ──────────────────────────────────────────── */
+function vLog(){
+  if(is26())return '<div class="banner info">Logging is for the '+LIVE_YR+' season. Switch the season at the top.</div>';
+  var all=fieldList().slice().sort(function(a,b){return a.field<b.field?-1:1;});
+  var opts=all.map(function(f){return '<option value="'+esc(f.field+' — '+f.estate)+'">';}).join('');
+  var T=todayIso(),today=[];
+  Object.keys(LOCAL.log||{}).forEach(function(k){(LOCAL.log[k].p||[]).forEach(function(x){if(x[0]===T)today.push([k,x]);});});
+  var pre=window._logKey&&BYKEY[window._logKey];
+  return '<div class="card"><h3>Log a pass</h3><div class="pad form">'
+    +'<div><label>Field</label><input id="lgField" list="lgFields" placeholder="start typing a field…" value="'+(pre?esc(pre.field+' — '+pre.estate):'')+'" oninput="logPick(this.value)"><datalist id="lgFields">'+opts+'</datalist><div id="lgInfo" class="small muted" style="margin-top:4px"></div></div>'
+    +'<div><label>Date</label><input id="lgDate" type="date" value="'+T+'"></div>'
+    +'<div class="row2"><div><label>Told to put on (mm)</label><input id="lgTold" type="number" inputmode="decimal"></div><div><label>Actually applied (mm)</label><input id="lgAp" type="number" inputmode="decimal"></div></div>'
+    +'<button class="btn" style="padding:13px;font-size:15px" onclick="logSubmit()">+ Log pass</button>'
+    +'<div class="small muted">Passes of 5mm or less are recorded but never count towards apps, totals or the countdown. Remember to <b>Save</b>.</div>'
+    +'</div></div>'
+    +'<div class="card"><h3>Logged for '+dm(T)+'</h3><div class="pad plist">'+(today.map(function(t){var f=BYKEY[t[0]];return '<div><b style="min-width:0;flex:1">'+esc(f?f.field:t[0])+'</b><span class="muted">told '+t[1][1]+'mm</span><b>'+t[1][2]+'mm</b>'+(PEND.f[t[0]]?'<span class="badge" style="background:#ffd54f">unsaved</span>':'')+'</div>';}).join('')||'<span class="muted small">Nothing yet today.</span>')+'</div></div>';
+}
+function logKeyFromText(v){var all=fieldList();for(var i=0;i<all.length;i++){if(all[i].field+' — '+all[i].estate===v)return key(all[i]);}return null;}
+function logPick(v){
+  var k=logKeyFromText(v),el=document.getElementById('lgInfo');window._logKey=k;if(!k){el.textContent='';return;}
+  var f=BYKEY[k],s=stat(f),T=todayIso(),told=s.mm2||'';s.g.forEach(function(x){if(x[0]===T)told=x[1];});
+  el.innerHTML=esc(s.c+(s.sub?' · '+s.sub:''))+' · '+fmt(acres(f),1)+' ac · last '+(s.last?dm(s.last)+' ('+s.days+'d)':'never')+' · '+badge(s);
+  if(told&&!document.getElementById('lgTold').value)document.getElementById('lgTold').value=told;
+}
+function logSubmit(){
+  var k=logKeyFromText(document.getElementById('lgField').value);if(!k){toast('Pick a field from the list');return;}
+  if(addPass(k,document.getElementById('lgDate').value,parseFloat(document.getElementById('lgTold').value),parseFloat(document.getElementById('lgAp').value))){window._logKey=null;}
+}
+
+/* ── VIEW: agronomist (read-only) ──────────────────────────────────────── */
+function vAgro(){
+  var R=filtered();
+  var rows=R.list.map(function(f,i){var s=R.stats[i];
+    return '<tr><td class="fn" onclick="openField('+jsq(s.k)+')">'+esc(f.field)+'</td><td>'+esc(f.estate)+'</td><td class="hide-m muted small">'+esc(areaOf(f))+'</td>'
+      +'<td>'+esc(s.c)+'</td><td class="sub" style="font-size:12px">'+esc(subOf(f)||'—')+'</td><td class="n">'+fmt(acres(f),1)+'</td>'
+      +'<td class="n"><b>'+(s.last?dm(s.last):'never')+'</b></td><td class="n" style="'+(s.code===1?'color:var(--r1);font-weight:700':'')+'">'+(s.days==null?'—':s.days+'d')+'</td>'
+      +'<td class="n">'+(s.apps||'—')+'</td><td class="n">'+(s.perAc>0?s.perAc.toFixed(1)+'″/ac':'—')+'</td><td>'+badge(s)+'</td></tr>';}).join('');
+  return '<div class="banner info">Read-only view for agronomists: when each field was last watered (passes over 5mm) and how much has gone on.</div>'
+    +chipsHtml(R.all)+filtersHtml(R.all)
+    +'<div class="card"><div class="tw" style="max-height:75vh"><table><thead><tr>'+th('Field','field','fn')+th('Estate','estate')+th('Area','area','hide-m')+th('Crop','crop')+th('Variety / type','variety')
+    +th('Acres','acres','n')+th('Last watered','last','n')+th('Days since','days','n')+th('Apps','apps','n')+th('Applied','applied','n')+th('Status','status')+'</tr></thead><tbody>'
+    +(rows||'<tr><td colspan="11" class="muted pad">No fields match.</td></tr>')+'</tbody></table></div></div>';
+}
+
+/* ── VIEW: totals (zones vs licence, per-field monthly) ────────────────── */
+function vTotals(){
+  var all=fieldList(),zt={},grand={acin:0,gal:0,m3:0,cost:0,apps:0},Z=FP.WATER_CFG.zones||[];
+  Z.forEach(function(z){zt[z.name]={z:z,acin:0,cost:0,need:0,n:0};});
+  var R=filtered(),rowsF=[];
+  all.forEach(function(f){var s=stat(f),t=passTotals(f,s),z=zoneOf(f),rt=rate(f);
+    grand.acin+=t.acin;grand.gal+=t.gal;grand.m3+=t.m3;grand.cost+=t.cost;grand.apps+=t.apps;
+    if(z&&zt[z.name]){var o=zt[z.name];o.acin+=t.acin;o.cost+=t.cost;o.n++;if(rt!=null)o.need+=rt*acres(f);}});
+  R.list.forEach(function(f,i){rowsF.push([f,R.stats[i],passTotals(f,R.stats[i])]);});
+  var zr=Z.map(function(z){var o=zt[z.name],gal=o.acin*GAL_PER_ACIN,pct=z.gal?gal/z.gal*100:0,needGal=o.need*GAL_PER_ACIN;
+    return '<tr><td><b>'+esc(z.name)+'</b><div class="muted small">'+o.n+' fields · £'+(z.rate||0)+(z.basis==='app'?'/app':'/ac-in')+'</div></td>'
+      +'<td class="n">'+fmt(z.gal/1e6,1)+'M</td><td class="n">'+fmt(gal/1e6,2)+'M</td><td><div class="bar"><i class="'+(pct>100?'over':pct>85?'hi':'')+'" style="width:'+Math.min(100,pct)+'%"></i></div><span class="small muted">'+fmt(pct,0)+'%</span></td>'
+      +'<td class="n">'+fmt((z.gal-gal)/1e6,2)+'M</td><td class="n hide-m">'+fmt((z.gal-gal)*0.00454609,0)+'</td><td class="n">'+fmt(o.acin,0)+'</td>'
+      +'<td class="n hide-m muted" title="plan rate × acres for the fields on this zone">'+fmt(needGal/1e6,1)+'M</td><td class="n">£'+fmt(o.cost,0)+'</td></tr>';}).join('');
+  var mh=MONTHS.map(function(m){return '<th class="n">'+m+'</th>';}).join('');
+  var fr=rowsF.map(function(x){var f=x[0],s=x[1],t=x[2];
+    return '<tr><td class="fn" onclick="openField('+jsq(s.k)+')">'+esc(f.field)+'</td><td>'+esc(f.estate)+'</td><td>'+esc(s.c)+'</td><td class="n">'+fmt(acres(f),1)+'</td>'
+      +MONTHS.map(function(m){var o=t.m[m];return '<td class="n">'+(o?'<b>'+o.apps+'</b> <span class="muted small">'+fmt(o.acin,0)+'</span>':'<span class="muted">·</span>')+'</td>';}).join('')
+      +'<td class="n"><b>'+(t.apps||'—')+'</b></td><td class="n">'+fmt(t.acin,0)+'</td><td class="n">'+(s.perAc?s.perAc.toFixed(1)+'″':'—')+'</td><td class="n hide-m">'+fmt(t.gal/1e6,2)+'M</td><td class="n hide-m">'+fmt(t.m3,0)+'</td><td class="n">£'+fmt(t.cost,0)+'</td></tr>';}).join('');
+  var L=is26()?null:liveJson();
+  return '<div class="kpis"><div class="kpi"><div class="l">Applied this season</div><div class="v">'+fmt(grand.acin,0)+'</div><div class="s">acre-inches · '+fmt(grand.apps,0)+' field-apps</div></div>'
+    +'<div class="kpi"><div class="l">Gallons</div><div class="v">'+fmt(grand.gal/1e6,1)+'M</div><div class="s">UK gal</div></div>'
+    +'<div class="kpi"><div class="l">Cubic metres</div><div class="v">'+fmt(grand.m3/1000,1)+'K</div><div class="s">m³</div></div>'
+    +'<div class="kpi"><div class="l">Water cost</div><div class="v">£'+fmt(grand.cost/1000,1)+'K</div><div class="s">zone rates from FieldPlan</div></div></div>'
+    +'<div class="card"><h3>Licences / zones <span class="muted small" style="font-weight:400">budgets, rates and zone rules read live from FieldPlan’s Water page</span></h3><div class="tw"><table><thead><tr><th>Zone</th><th class="n">Licence gal</th><th class="n">Used gal</th><th>Used</th><th class="n">Left gal</th><th class="n hide-m">Left m³</th><th class="n">Ac-in</th><th class="n hide-m">Plan need</th><th class="n">£</th></tr></thead><tbody>'+zr+'</tbody></table></div></div>'
+    +filtersHtml(R.all)
+    +'<div class="card"><h3>By field and month <span class="muted small" style="font-weight:400">apps (bold) and acre-inches per month · passes over 5mm only</span><span class="sp"></span><button class="btn o sm" onclick="exportCsv()">⬇ CSV</button></h3><div class="tw" style="max-height:70vh"><table><thead><tr>'
+    +th('Field','field','fn')+th('Estate','estate')+th('Crop','crop')+th('Acres','acres','n')+mh+th('Apps','apps','n')+'<th class="n">Ac-in</th>'+th('″/ac','applied','n')+'<th class="n hide-m">Gallons</th><th class="n hide-m">m³</th><th class="n">£</th></tr></thead><tbody>'
+    +(fr||'<tr><td colspan="20" class="muted pad">No fields match.</td></tr>')+'</tbody></table></div></div>'
+    +(L?'<div class="card"><h3>What FieldPlan’s Water page receives (irr_live.json)</h3><div class="pad small"><b>By estate (m³):</b> '+(Object.keys(L.est).map(function(k){return esc(k)+' '+fmt(L.est[k]);}).join(' · ')||'nothing logged yet')
+      +'<br><b>By month (m³):</b> '+(Object.keys(L.mon).map(function(k){return k+' '+fmt(L.mon[k]);}).join(' · ')||'—')+'<br><span class="muted">Published on every save'+(nPending()?' — includes your unsaved changes here':'')+'.</span></div></div>':'');
+}
+function exportCsv(){
+  var R=filtered(),out=[['Field','Estate','Area','Crop','Variety/Type','oid','Acres'].concat(MONTHS.map(function(m){return m+' apps';}),MONTHS.map(function(m){return m+' ac-in';}),['Season apps','Ac-in','In/ac','Gallons','m3','£'])];
+  R.list.forEach(function(f,i){var s=R.stats[i],t=passTotals(f,s);
+    out.push([f.field,f.estate,areaOf(f),s.c,subOf(f),f.oid||'',acres(f).toFixed(2)].concat(MONTHS.map(function(m){return t.m[m]?t.m[m].apps:0;}),MONTHS.map(function(m){return t.m[m]?t.m[m].acin.toFixed(1):0;}),[t.apps,t.acin.toFixed(1),s.perAc.toFixed(2),Math.round(t.gal),Math.round(t.m3),Math.round(t.cost)]));});
+  var csv=out.map(function(r){return r.map(function(v){v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='Irrigation_'+S.season+'_totals.csv';a.click();
+}
+
+/* ── VIEW: settings ────────────────────────────────────────────────────── */
+function canConfigure(){var u=user();if(!u)return false;var r=myRole();return r==='sup'||r==='mgr'||u.role==='admin'||u.role==='edit';}
+function vSettings(){
+  if(!canConfigure())return '<div class="banner info">Settings are looked after by supervisors and the office.</div>'+setupInfo();
+  var C=cfg(),crops=IRR_CROPS.slice(),sug=(R26&&R26.gapSuggest)||{};
+  var base=crops.map(function(c){var v=C.gap[c]!=null?C.gap[c]:'';
+    return '<div><span style="min-width:110px">'+c+'</span><input type="number" value="'+v+'" placeholder="days" onchange="gapSet('+jsq(c)+',this.value)"><span class="small muted">days'+(sug[c]!=null?' · 2026: '+sug[c]:'')+'</span></div>';}).join('');
+  var vk=Object.keys(C.gap).filter(function(k){return k.indexOf('|')>=0;}).sort();
+  var over=vk.map(function(k){var i=k.indexOf('|');return '<div><span style="min-width:100px">'+esc(k.slice(0,i))+'</span><b class="sub" style="min-width:110px;font-size:12px">'+esc(k.slice(i+1))+'</b><input type="number" value="'+C.gap[k]+'" onchange="gapSet('+jsq(k)+',this.value)"><span class="small muted">days</span><button class="x" onclick="gapSet('+jsq(k)+',\'\')">✕</button></div>';}).join('');
+  var subs={};fieldList().forEach(function(f){var c=crop(f),s=sub1(f);if(s)(subs[c]=subs[c]||{})[s]=1;});
+  window._subs=subs;
+  var hidden=Object.keys(C.hide).map(function(k){var f=BYKEY[k];return '<div class="small"><span style="flex:1">'+esc(f?f.field+' — '+f.estate:k)+'</span><button class="btn o sm" onclick="unhide('+jsq(k)+')">restore</button></div>';}).join('');
+  var added=Object.keys(C.add).map(function(k){var f=BYKEY[k];return '<div class="small"><span style="flex:1">'+esc(f?f.field+' — '+f.estate+' ('+FN.gc(f,LIVE_YR)+')':k)+'</span><button class="btn r sm" onclick="unadd('+jsq(k)+')">remove</button></div>';}).join('');
+  var addOpts=FP.F.filter(function(f){return !C.add[key(f)];}).map(function(f){return '<option value="'+esc(f.field+' — '+f.estate)+'">';}).join('');
+  var u=user();
+  return setupHtml()+(is26()?'<div class="banner info">These settings belong to the '+LIVE_YR+' season. Viewing 2026 uses the same warning days so you can test them against last year.</div>':'')
+    +'<div class="card"><h3>⏱ Warning days — when the red 1 appears</h3><div class="pad">'
+    +'<div class="small muted" style="margin-bottom:8px">Days after the last pass of over 5mm before a field flags as due. A variety/type line beats its crop line. Onions key off the Omnia type (Brown Drilled, Winter Sets…).</div>'
+    +'<div class="gapl">'+base+'</div>'
+    +(Object.keys(sug).length?'<div style="margin-top:10px"><button class="btn o sm" onclick="useSuggest()">Fill blanks from 2026 actual intervals</button> <span class="small muted">median days between passes over 5mm in the 2026 records</span></div>':'')
+    +'<div style="font-weight:600;color:var(--g1);margin:14px 0 6px">Variety / type overrides</div><div class="gapl">'+(over||'<span class="small muted">none yet</span>')+'</div>'
+    +'<div class="filters" style="margin-top:10px"><select id="gCrop" onchange="fillSubs()"><option value="">crop…</option>'+crops.map(function(c){return '<option>'+c+'</option>';}).join('')+'</select>'
+    +'<select id="gSub" style="min-width:150px"><option value="">variety / type…</option></select><input id="gDays" type="number" placeholder="days" style="width:70px"><button class="btn sm" onclick="gapAdd()">+ Add</button></div>'
+    +'</div></div>'
+    +'<div class="card"><h3>Which fields are listed</h3><div class="pad small">'
+    +'<div class="muted" style="margin-bottom:8px">Automatically: every field FieldPlan has as <b>'+IRR_CROPS.join(', ')+'</b> in '+LIVE_YR+' and counts as ours (FieldPlan’s own isOurs rule). Add others (e.g. irrigated maize) or hide ones that won’t be watered.</div>'
+    +'<div class="filters"><input id="addF" list="addFs" placeholder="add any field…" style="min-width:240px"><datalist id="addFs">'+addOpts+'</datalist><button class="btn sm" onclick="addField()">+ Add field</button></div>'
+    +'<div class="plist">'+(added||'')+'</div>'
+    +(hidden?'<div style="font-weight:600;margin:10px 0 4px">Hidden</div><div class="plist">'+hidden+'</div>':'')
+    +'</div></div>'
+    +'<div class="card"><h3>Data links</h3><div class="pad small" style="line-height:1.7">'
+    +'<div>FieldPlan: '+esc(SRC.fp)+'</div><div>Omnia: '+esc(SRC.om||'—')+'</div><div>Irrigation records: '+esc(SRC.data)+'</div>'
+    +'<div>2026 records: '+(R26?Object.keys(R26.fields).length+' fields from '+esc(R26.src):'not loaded')+'</div>'
+    +(SRC.rulesErr?'<div style="color:var(--r1)">FieldPlan rules could not run ('+esc(SRC.rulesErr)+') — fallback in use</div>':'<div>Field rules: FieldPlan’s own isOurs / zone / water-rate code</div>')
+    +'<div>Signed in: '+(u?esc(u.name)+' ('+esc(u.emp)+')':'no')+'</div>'
+    +'<div style="margin-top:6px"><button class="btn o sm" onclick="refreshAll(true)">↻ Re-read FieldPlan &amp; Omnia now</button></div></div></div>';
+}
+function gapSet(k,v){if(v===''||v==null)delete cfg().gap[k];else cfg().gap[k]=+v;cfgTouch();}
+function useSuggest(){var g=cfg().gap,s=R26.gapSuggest,n=0;Object.keys(s).forEach(function(k){if(g[k]==null){g[k]=s[k];n++;}});toast(n+' warning-day lines filled');cfgTouch();}
+function fillSubs(){var c=document.getElementById('gCrop').value,names=Object.keys((window._subs||{})[c]||{});
+  if(c==='Onions')['Brown Drilled','Red Drilled','Winter Sets','Spring Sets','Spring Sets Red','Red Sets','Speciality Alliums'].forEach(function(x){if(names.indexOf(x)<0)names.push(x);});
+  document.getElementById('gSub').innerHTML='<option value="">variety / type…</option>'+names.sort().map(function(v){return '<option>'+esc(v)+'</option>';}).join('');}
+function gapAdd(){var c=document.getElementById('gCrop').value,s=document.getElementById('gSub').value,d=parseFloat(document.getElementById('gDays').value);
+  if(!c||!s||isNaN(d)){toast('Pick crop, variety/type and days');return;}cfg().gap[c+'|'+s]=d;cfgTouch();}
+function addField(){var v=document.getElementById('addF').value,f=FP.F.filter(function(x){return x.field+' — '+x.estate===v;})[0];if(!f){toast('Pick a field from the list');return;}
+  var k=key(f);cfg().add[k]=1;delete cfg().hide[k];cfgTouch();}
+function unadd(k){delete cfg().add[k];cfgTouch();}
+function unhide(k){delete cfg().hide[k];cfgTouch();}
+function hideField(k){if(!canEdit())return;cfg().hide[k]=1;delete cfg().add[k];closeModal();cfgTouch();}
+
+/* ── field detail sheet ────────────────────────────────────────────────── */
+function openField(k){
+  var f=BYKEY[k];if(!f)return;var s=stat(f),t=passTotals(f,s),rt=rate(f),T=todayIso(),z=zoneOf(f);
+  var told=s.mm2||'';s.g.forEach(function(x){if(x[0]===T)told=x[1];});
+  var pl=s.p.slice().reverse().map(function(x){var by=(FP.USERS||[]).filter(function(u){return u.emp===x[3];})[0];
+    return '<div><b style="min-width:46px">'+dm(x[0])+'</b><span class="muted">told '+(x[1]||0)+'mm</span><b style="color:'+((+x[2]||0)>MIN_MM?'var(--g1)':'#999')+'">'+x[2]+'mm</b>'
+      +'<span class="muted small" style="flex:1">'+(by?esc(by.name.split(' ')[0]):(x[3]==='xl'?'2026 sheet':''))+'</span>'+(is26()?'':'<button class="x" onclick="delPass('+jsq(k)+',\''+x[4]+'\')">✕</button>')+'</div>';}).join('')||'<span class="muted small">No passes yet.</span>';
+  var prog=s.g.map(function(x){return '<span class="gp p" onclick="progToggle('+jsq(k)+',\''+x[0]+'\');openField('+jsq(k)+')" title="tap to remove">'+dm(x[0])+' · '+x[1]+'mm ✕</span>';}).join(' ');
+  modal('<div style="display:flex;align-items:start;gap:8px"><div style="flex:1"><h2>'+esc(f.field)+'</h2><div class="muted small">'+esc(f.estate)+(areaOf(f)?' · '+esc(areaOf(f)):'')+' · '+fmt(acres(f),1)+' irrigated ac (field '+f.ha+' ha) · oid '+esc(f.oid||'none')+(z?' · '+esc(z.name):'')+'</div></div><button class="x" style="font-size:20px;color:var(--tx3)" onclick="closeModal()">✕</button></div>'
+    +(is26()?'':'<div class="small" style="margin:6px 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="muted">Irrigated area</span><input type="number" step="0.01" value="'+(irrHa(f)!=null?irrHa(f):'')+'" placeholder="'+f.ha+'" onchange="setIrrHa('+jsq(k)+',this.value)" style="width:80px;padding:5px;border:1px solid var(--bd);border-radius:5px"><span class="muted">ha — leave blank to use the whole field ('+f.ha+' ha). Set it when only part of the field is watered.</span></div>'
+      +'<div class="small" style="margin:6px 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="muted">Runs in field</span><input type="number" value="'+(runsOf(k)||'')+'" onchange="setRuns('+jsq(k)+',this.value);openField('+jsq(k)+')" style="width:60px;padding:5px;border:1px solid var(--bd);border-radius:5px">'
+      +'<span class="muted">run length</span><input type="number" value="'+((cfg().runLen||{})[k]||'')+'" onchange="setRunLen('+jsq(k)+',this.value)" style="width:70px;padding:5px;border:1px solid var(--bd);border-radius:5px"><span class="muted">m (lets the start screen work out the finish time from speed)</span></div>'
+      +progHtml(k)+fieldSetsHtml(k))+'<div style="margin:8px 0">'+esc(s.c)+(s.sub?' · <span class="sub" style="font-size:13px">'+esc(subOf(f))+'</span>':'')+' &nbsp; '+badge(s)+'</div>'
+    +'<div class="kpis" style="grid-template-columns:repeat(4,1fr)"><div class="kpi"><div class="l">Apps</div><div class="v">'+t.apps+'</div></div><div class="kpi"><div class="l">Applied</div><div class="v">'+s.perAc.toFixed(1)+'″</div></div>'
+    +'<div class="kpi"><div class="l">Plan rate</div><div class="v">'+(rt==null?'—':rt)+'″</div></div><div class="kpi"><div class="l">Warning</div><div class="v">'+(s.gap==null?'—':s.gap+'d')+'</div></div></div>'
+    +(is26()?'':'<div class="card"><h3>Log a pass</h3><div class="pad form"><div class="row2"><div><label>Date</label><input type="date" id="fdD" value="'+T+'"></div><div><label>Told (mm)</label><input type="number" inputmode="decimal" id="fdT" value="'+told+'"></div></div>'
+      +'<div class="row2"><div><label>Applied (mm)</label><input type="number" inputmode="decimal" id="fdA"></div><div style="display:flex;align-items:end"><button class="btn" style="width:100%;padding:12px" onclick="if(addPass('+jsq(k)+',fdD.value,parseFloat(fdT.value),parseFloat(fdA.value)))openField('+jsq(k)+')">+ Log pass</button></div></div></div></div>'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><span class="small muted">Status:</span><select onchange="setSt('+jsq(k)+',this.value);openField('+jsq(k)+')" style="padding:6px;border:1px solid var(--bd);border-radius:6px">'
+      +'<option value="0"'+(s.st!==2&&s.st!==3&&s.st!==9?' selected':'')+'>auto (1 = due)</option><option value="2"'+(s.st===2?' selected':'')+'>2 — definitely start</option><option value="3"'+(s.st===3?' selected':'')+'>3 — on programme</option><option value="9"'+(s.st===9?' selected':'')+'>finished for the season</option></select>'
+      +(s.st===2?'<input type="number" value="'+(s.mm2||'')+'" placeholder="mm" onchange="setMm2('+jsq(k)+',this.value)" style="width:64px;padding:6px;border:1px solid var(--r2);border-radius:6px"> <span class="small muted">mm to put on</span>':'')+'</div>'
+      +(prog?'<div class="small" style="margin-bottom:10px">Programmed: '+prog+'</div>':''))
+    +'<div style="font-weight:600;color:var(--g1);margin:6px 0">Passes</div><div class="plist">'+pl+'</div>'
+    +(is26()?'':'<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="closeModal();openPlan({k:'+jsq(k)+'})">+ Plan a move here</button><button class="btn o sm" onclick="window._logKey='+jsq(k)+';closeModal();go(\'log\')">Open in quick log</button><button class="btn r sm" onclick="if(confirm(\'Hide this field from the irrigation list?\'))hideField('+jsq(k)+')">Hide from list</button></div>'));
+}
+
+/* ═══ OPERATIONS — the three stages ═══════════════════════════════════════
+   1 Records (Matthew/agronomist): predicted / planned / started / amount — the Planner.
+   2 Supervisor: what's running on their estate, how far through each field, when it
+     finishes, what to start tonight, who moves which machine when, when all machines are in.
+   3 Staff: their moves, and a start screen (finish time, speed, gun angle).
+   Data: cfg.mach [{id,n,est}], cfg.runs {fieldKey:N}, cfg.runLen {fieldKey:metres},
+   cfg.team {emp:{r:'sup'|'staff'|'mgr',est:[...]}}, and LOCAL.ops {id:op}:
+     plan = {t:'plan',d,at,m,k,run,emp,mm,by,done}      a planned move (supervisor)
+     set  = {t:'set',m,k,run,s,f,spd,ang,mm,emp,pid,plan,end}  a machine started on a run (staff)
+   The first run of a new cycle on a field creates the field's pass (date, told, applied)
+   in the Records, so stage 3 feeds stage 1 automatically. ══════════════════ */
+function nowDT(){var d=new Date();return isoOf(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+function addMin(dt,m){var d=new Date(dt);d.setMinutes(d.getMinutes()+Math.round(m));return isoOf(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+function minsTo(a,b){return Math.round((new Date(b)-new Date(a))/60000);}
+function tShow(dt){if(!dt)return '';var d=dt.slice(0,10),T=isoOf(new Date());return (d===T?'':d===addDays(T,1)?'tmrw ':d===addDays(T,-1)?'yest ':dm(d)+' ')+dt.slice(11,16);}
+function durShow(m){if(m==null)return '';var neg=m<0;m=Math.abs(m);var h=Math.floor(m/60),mm=m%60;return (neg?'-':'')+(h?h+'h ':'')+pad(mm)+'m';}
+function ops(){return LOCAL.ops||(LOCAL.ops={});}
+function opList(t){var O=ops(),out=[];Object.keys(O).forEach(function(k){var o=O[k];if(o&&o.t===t&&!o.x)out.push(o);});return out;}
+function opPut(o){o.u=Date.now();ops()[o.id]=o;PEND.o[o.id]=++SEQ;}
+function opsCommit(){persistShadow();schedSave();render();}
+/* machines = the irrigators on the Checklist App's asset list (AssetList.xlsx, Front Sheet), read live
+   through the relay (or imported from the file), plus any extras added by hand. Keyed 'A:<fleet no>'. */
+var ASSETS=null;try{ASSETS=JSON.parse(localStorage.getItem('irr_assets')||'null');}catch(e){}
+function assetSrc(){var a=ASSETS,b=cfg().assets;if(a&&b)return (b.t||0)>(a.t||0)?b:a;return a||b||null;}
+function assetList(){var x=assetSrc();return (x&&x.list)||[];}
+function machines(){
+  var C=cfg(),off=C.machOff||{},home=C.machEst||{},out=[];
+  assetList().forEach(function(a){if(off[a.id])return;out.push({id:'A:'+a.id,n:String(a.name).trim(),est:home[a.id]||a.est||'',a:a});});
+  (C.mach||[]).forEach(function(m){if(!off[m.id])out.push(m);});
+  return out;
+}
+// where a machine is now = the estate of the field it was last started on (else its home estate)
+function machEst(m){if(!m)return '';var st=machState(m.id);if(st.cur){var f=BYKEY[st.cur.k];if(f)return f.estate;}return m.est||'';}
+function machOptions(list,sel,inEst){ // machines on the estate first, then every other machine
+  var a=[],b=[];list.forEach(function(m){(inEst(machEst(m))?a:b).push(m);});
+  var o=function(m){var st=machState(m.id);return '<option value="'+esc(m.id)+'"'+(m.id===sel?' selected':'')+'>'+esc(m.n)+(st.running?' — running on '+esc(fName(st.cur.k))+', in '+tShow(st.inAt):machEst(m)?' — '+esc(machEst(m)):'')+'</option>';};
+  return '<option value="">pick…</option>'+(a.length?'<optgroup label="On this estate">'+a.map(o).join('')+'</optgroup>':'')+(b.length?'<optgroup label="'+(a.length?'Other machines':'Machines')+'">'+b.map(o).join('')+'</optgroup>':'');
+}
+async function importAssets(inp){
+  var f=inp.files&&inp.files[0];if(!f)return;
+  try{var list=assetIrrigators(await xlsxSheetRows(await f.arrayBuffer(),'Front Sheet'));
+    if(!list.length)throw new Error('no Irrigator rows found on the Front Sheet');
+    cfg().assets={t:Date.now(),src:'imported file '+f.name,list:list};cfgTouch();toast(list.length+' irrigators loaded from '+f.name);
+  }catch(e){alert('Could not read that file: '+e.message);}
+}
+async function loadAssets(force){
+  var u=user();if(!u)return;
+  try{var r=await fetch(RELAY+'assets?emp='+encodeURIComponent(u.emp)+(force?'&fresh=1':''));if(!r.ok){SRC.assets='shared asset list not linked to the relay yet';return;}
+    var o=await r.json();if(o&&o.ok&&o.list&&o.list.length){ASSETS={t:Date.now(),src:'shared file (Checklist App)',list:o.list};SRC.assets='read '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      try{localStorage.setItem('irr_assets',JSON.stringify(ASSETS));}catch(e){}if(LOCAL)softRender();}
+    else SRC.assets=(o&&o.error)||'shared asset list not available';
+  }catch(e){SRC.assets='shared asset list not reachable';}
+}
+function machHome(id,v){var C=cfg();C.machEst=C.machEst||{};if(v)C.machEst[id]=v;else delete C.machEst[id];cfgTouch();}
+function machUse(id,on){var C=cfg();C.machOff=C.machOff||{};if(on)delete C.machOff[id];else C.machOff[id]=1;cfgTouch();}
+// Minimal .xlsx reader (no libraries): unzips with the built-in DecompressionStream and
+// returns one sheet as an array of row arrays (strings/numbers). Works in browsers and
+// Cloudflare Workers. Used for the Checklist App's AssetList.xlsx.
+async function xlsxSheetRows(buf, sheetName) {
+  const u8 = new Uint8Array(buf), dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('not an xlsx file');
+  const n = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true); const files = {};
+  for (let k = 0; k < n; k++) {
+    const meth = dv.getUint16(p + 10, true), csz = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true),
+      xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl));
+    files[name] = { meth, csz, lho }; p += 46 + nl + xl + cl;
+  }
+  async function read(name) {
+    const f = files[name]; if (!f) return null;
+    const o = f.lho + 30 + dv.getUint16(f.lho + 26, true) + dv.getUint16(f.lho + 28, true);
+    const raw = u8.subarray(o, o + f.csz);
+    if (f.meth === 0) return new TextDecoder().decode(raw);
+    const s = new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new TextDecoder().decode(await new Response(s).arrayBuffer());
+  }
+  const unx = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (m, d) => String.fromCharCode(+d)).replace(/&amp;/g, '&');
+  const wb = await read('xl/workbook.xml'), rels = await read('xl/_rels/workbook.xml.rels');
+  let rid = null;
+  for (const m of wb.matchAll(/<sheet\b[^>]*>/g)) {
+    const nm = /name="([^"]*)"/.exec(m[0]), id = /r:id="([^"]*)"/.exec(m[0]);
+    if (nm && unx(nm[1]).trim() === sheetName.trim()) rid = id && id[1];
+  }
+  if (!rid) throw new Error('sheet "' + sheetName + '" not found');
+  let target = null;
+  for (const m of rels.matchAll(/<Relationship\b[^>]*>/g)) if (m[0].indexOf('Id="' + rid + '"') >= 0) target = /Target="([^"]*)"/.exec(m[0])[1];
+  const path = target.replace(/^\//, '').replace(/^(?!xl\/)/, 'xl/');
+  const ssx = await read('xl/sharedStrings.xml'), ss = [];
+  if (ssx) for (const m of ssx.matchAll(/<si>([\s\S]*?)<\/si>/g)) ss.push(unx([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x => x[1]).join('')));
+  const sx = await read(path), rows = [];
+  const col = ref => { let c = 0; for (const ch of ref.replace(/\d+/g, '')) c = c * 26 + ch.charCodeAt(0) - 64; return c - 1; };
+  for (const rm of sx.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+    const row = [];
+    for (const cm of rm[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+      const at = cm[1], r = /r="([A-Z]+\d+)"/.exec(at), t = /t="([^"]*)"/.exec(at), body = cm[2] || '';
+      const v = /<v>([\s\S]*?)<\/v>/.exec(body), is = /<is>[\s\S]*?<t[^>]*>([\s\S]*?)<\/t>/.exec(body);
+      let val = null;
+      if (t && t[1] === 's' && v) val = ss[+v[1]];
+      else if (t && t[1] === 'inlineStr' && is) val = unx(is[1]);
+      else if (v) val = (t && (t[1] === 'str' || t[1] === 'e')) ? unx(v[1]) : (isNaN(+v[1]) ? unx(v[1]) : +v[1]);
+      row[r ? col(r[1]) : row.length] = val;
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+// Irrigators from the Checklist App's AssetList.xlsx ("Front Sheet": Check Type, NameColumn, MakeColumn, Crop, Year)
+// NameColumn looks like "B1 A F Machinery 11920207 R64" or "P13 Pickenham E330047 / VR7 600".
+function assetIrrigators(rows) {
+  const out = [], seen = {};
+  const head = (rows[0] || []).map(x => String(x || '').trim().toLowerCase());
+  const iT = Math.max(0, head.indexOf('check type')), iN = head.indexOf('namecolumn') >= 0 ? head.indexOf('namecolumn') : 1,
+    iM = head.indexOf('makecolumn') >= 0 ? head.indexOf('makecolumn') : 2;
+  for (const r of rows.slice(1)) {
+    if (!/irrigat/i.test(String(r[iT] || ''))) continue;
+    const full = String(r[iN] || '').replace(/\s+/g, ' ').trim(); if (!full) continue;
+    const m = /^(\S+)\s+(A F Machinery|Pickenham|Non Existant|[A-Za-z ]+?)\s+(.*)$/i.exec(full);
+    const fleet = m ? m[1] : full.split(' ')[0], owner = m ? m[2] : '', rest = m ? m[3].trim() : '';
+    if (/non exist/i.test(owner) || seen[fleet]) continue;
+    seen[fleet] = 1;
+    let serial = rest, model = '';
+    if (rest.indexOf(' / ') >= 0) { serial = rest.split(' / ')[0].trim(); model = rest.split(' / ').slice(1).join(' / ').trim(); }
+    else { const t = rest.split(' '); model = t.length > 1 ? t.pop() : ''; serial = t.join(' '); }
+    const make = String(r[iM] || '').trim();
+    out.push({ id: fleet, name: fleet + ' ' + (make ? make + ' ' : '') + model, make, model, serial: serial === 'n/a' ? '' : serial,
+      owner, est: /pickenham/i.test(owner) ? 'Pickenham' : '' });
+  }
+  const key = s => { const m = /^([A-Z]*)(\d*)/i.exec(s); return [m[1].toUpperCase(), +(m[2] || 0)]; };
+  out.sort((a, b) => { const x = key(a.id), y = key(b.id); return x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : x[1] - y[1]; });
+  return out;
+}
+
+function mach(id){return machines().filter(function(m){return m.id===id;})[0]||null;}
+function runsOf(k){var r=cfg().runs||{};return r[k]?+r[k]:null;}
+function team(){return cfg().team||(cfg().team={});}
+function myRole(){var u=user();if(!u)return '';var t=team()[u.emp];return t?t.r:(u.role==='admin'?'mgr':'');}
+function myEsts(){var u=user(),t=u&&team()[u.emp];return t&&t.est&&t.est.length?t.est:[];}
+function nameOf(emp){var x=(FP.USERS||[]).filter(function(u){return u.emp===emp;})[0];return x?x.name:(emp||'—');}
+function first(n){return String(n||'').split(' ')[0];}
+function fName(k){var f=BYKEY[k];return f?f.field:k;}
+function fEst(k){var f=BYKEY[k];return f?f.estate:'';}
+
+// the set currently (or last) on each machine
+function machState(id){
+  var ss=opList('set').filter(function(s){return s.m===id;}).sort(function(a,b){return a.s<b.s?1:-1;});
+  var cur=ss[0]||null,now=nowDT();if(!cur)return {cur:null,running:false,inAt:null};
+  var stop=cur.end||cur.f||null;var running=!cur.end&&(!cur.f||cur.f>now);
+  return {cur:cur,running:running,inAt:stop,left:stop?minsTo(now,stop):null};
+}
+// where a field is in its current cycle of runs
+function fieldProg(k){
+  var N=runsOf(k),ss=opList('set').filter(function(s){return s.k===k;}).sort(function(a,b){return a.s<b.s?-1:1;});
+  if(!ss.length)return {N:N,runs:[],pid:null,sets:[],running:[],done:0,complete:false};
+  var pid=ss[ss.length-1].pid,cs=ss.filter(function(s){return s.pid===pid;}),now=nowDT(),runs=[],done={};
+  cs.forEach(function(s){if(runs.indexOf(s.run)<0)runs.push(s.run);if(s.end||(s.f&&s.f<=now))done[s.run]=1;});
+  var running=cs.filter(function(s){var ms=machState(s.m);return ms.cur&&ms.cur.id===s.id&&ms.running;});
+  var durs=cs.map(function(s){var e=s.end||s.f;return e?minsTo(s.s,e):0;}).filter(function(x){return x>0;});
+  var avg=durs.length?durs.reduce(function(a,b){return a+b;},0)/durs.length:null;
+  var lastF=cs.reduce(function(a,s){var e=s.end||s.f||'';return e>a?e:a;},'');
+  var remaining=N?Math.max(0,N-runs.length):0;
+  var par=Math.max(1,running.length);
+  var est=lastF?(remaining&&avg?addMin(lastF,remaining*avg/par):lastF):null;
+  return {N:N,runs:runs,pid:pid,sets:cs,running:running,done:Object.keys(done).length,complete:!!(N&&runs.length>=N&&!running.length),est:est,avg:avg,start:cs[0].s};
+}
+function nextRun(k){var fp=fieldProg(k),N=fp.N;if(!fp.pid||fp.complete)return 1;for(var r=1;r<=(N||99);r++)if(fp.runs.indexOf(r)<0)return r;return 1;}
+function progHtml(k,compact){
+  var fp=fieldProg(k);if(!fp.pid)return '';
+  if(fp.complete&&!compact)return '<span class="small muted">last cycle done '+tShow(fp.est)+'</span>';
+  if(fp.complete)return '';
+  var pct=fp.N?Math.round(fp.done/fp.N*100):0;
+  var run=fp.running.map(function(s){var m=mach(s.m);return (m?m.n:'?')+' run '+s.run+' → '+tShow(s.f);}).join(', ');
+  return '<div class="small" style="margin-top:3px"><span style="color:var(--r3);font-weight:700">▶ '+fp.done+(fp.N?'/'+fp.N:'')+' runs</span>'
+    +(fp.N?' <span class="bar" style="display:inline-block;width:60px;vertical-align:middle"><i style="width:'+pct+'%"></i></span>':'')
+    +(run?' <span class="muted">'+esc(run)+'</span>':'')+(fp.est&&fp.N?' <span class="muted">· field done ~'+tShow(fp.est)+'</span>':'')+'</div>';
+}
+
+// STAGE 3 → 1: a machine starts on a run
+function startSet(o){
+  var f=BYKEY[o.k];if(!f){toast('Pick a field');return false;}
+  if(!o.m){toast('Pick a machine');return false;}if(!o.f){toast('Enter the finish time');return false;}
+  var u=user(),r=rec(f),s=o.s||nowDT(),day=s.slice(0,10),fp=fieldProg(o.k),pid=null;
+  if(fp.pid&&!fp.complete&&fp.runs.indexOf(+o.run)<0)pid=fp.pid;          // carries on the current cycle
+  if(!pid){                                                                // first run of a new cycle = a new pass in the Records
+    pid=newId();(r.p=r.p||[]).push([day,+o.told||+o.mm||0,+o.mm||0,u?u.emp:'',pid]);
+    r.g=(r.g||[]).filter(function(x){return x[0]!==day;});
+    if(+o.mm>MIN_MM&&(r.st===2||r.st===3))r.st=0;
+    markField(f);
+  }
+  var ms=machState(o.m);if(ms.cur&&!ms.cur.end&&(!ms.cur.f||ms.cur.f>s)){ms.cur.end=s;opPut(ms.cur);} // machine moved off its last run early
+  opPut({id:newId(),t:'set',m:o.m,k:o.k,run:+o.run||1,s:s,f:o.f,spd:o.spd||'',ang:o.ang||'',mm:+o.mm||0,emp:o.emp||(u?u.emp:''),by:u?u.emp:'',pid:pid,plan:o.plan||''});
+  if(o.plan){var pl=ops()[o.plan];if(pl){pl.done=1;opPut(pl);}}
+  opsCommit();toast('Started '+((mach(o.m)||{}).n||'machine')+' on '+f.field+' run '+(o.run||1));return true;
+}
+function stopMachine(id){var ms=machState(id);if(!ms.cur)return;if(!confirm('Mark '+((mach(id)||{}).n||'machine')+' as finished / stopped now?'))return;ms.cur.end=nowDT();opPut(ms.cur);opsCommit();}
+function delOp(id){var o=ops()[id];if(!o||!confirm('Delete this?'))return;o.x=1;opPut(o);opsCommit();closeModal();}
+
+/* ── start screen (staff) ─────────────────────────────────────────────── */
+function openStart(planId,machId){
+  if(!canEdit())return;var u=user();if(!u){signIn(function(){openStart(planId,machId);});return;}
+  var pl=planId?ops()[planId]:null,ests=myEsts();
+  var M=machines(),inMine=function(e){return !ests.length||ests.indexOf(e)>=0;};
+  var mid=pl?pl.m:(machId||''),k=pl?pl.k:'',run=pl?pl.run:'',mm=pl?pl.mm:'';
+  var F=fieldList().filter(function(f){return !ests.length||ests.indexOf(f.estate)>=0||key(f)===k;}).sort(function(a,b){return a.field<b.field?-1:1;});
+  var now=new Date(),nt=pad(now.getHours())+':'+pad(now.getMinutes());
+  modal('<div style="display:flex;align-items:start"><h2 style="flex:1">Start a machine</h2><button class="x" style="font-size:20px;color:var(--tx3)" onclick="closeModal()">✕</button></div>'
+    +(pl?'<div class="banner info">Planned: <b>'+esc((mach(pl.m)||{}).n||'')+'</b> to <b>'+esc(fName(pl.k))+'</b> run '+pl.run+' at '+esc(pl.at||'')+(pl.mm?' · '+pl.mm+'mm':'')+'</div>':'')
+    +'<div class="form">'
+    +'<div><label>Machine</label><select id="stM">'+machOptions(M,mid,inMine)+'</select></div>'
+    +'<div><label>Field</label><select id="stK" onchange="stFieldChange()"><option value="">pick…</option>'+F.map(function(f){var kk=key(f);return '<option value="'+esc(kk)+'"'+(kk===k?' selected':'')+'>'+esc(f.field)+' — '+esc(f.estate)+'</option>';}).join('')+'</select></div>'
+    +'<div class="row2"><div><label>Run</label><input id="stR" type="number" inputmode="numeric" value="'+(run||'')+'" oninput="stCalc()"></div><div><label>Started at</label><input id="stS" type="time" value="'+nt+'" oninput="stCalc()"></div></div>'
+    +'<div class="row2"><div><label>Speed (m/h)</label><input id="stSp" type="number" inputmode="decimal" oninput="stCalc()"></div><div><label>Gun angle (°)</label><input id="stA" type="number" inputmode="numeric"></div></div>'
+    +'<div class="row2"><div><label>Finish time</label><input id="stF" type="time"></div><div><label>Amount (mm)</label><input id="stMm" type="number" inputmode="decimal" value="'+(mm||'')+'"></div></div>'
+    +'<div id="stInfo" class="small muted"></div>'
+    +'<button class="btn" style="padding:14px;font-size:16px" onclick="stSubmit('+(planId?jsq(planId):'null')+')">▶ Start</button></div>');
+  stFieldChange(true);
+}
+function stFieldChange(keep){
+  var k=document.getElementById('stK').value,info=document.getElementById('stInfo');if(!k){info.textContent='';return;}
+  var fp=fieldProg(k),s=stat(BYKEY[k]),L=(cfg().runLen||{})[k];
+  if(!keep||!document.getElementById('stR').value)document.getElementById('stR').value=nextRun(k);
+  if(!document.getElementById('stMm').value){var mm=s.mm2||'';s.g.forEach(function(x){if(x[0]===isoOf(new Date()))mm=x[1];});document.getElementById('stMm').value=mm||20;}
+  info.innerHTML=(fp.N?fp.N+' runs':'runs not set')+(L?' · run length '+L+'m':'')+(fp.pid&&!fp.complete?' · this cycle: runs '+fp.runs.join(', ')+' started':'')+' · '+badge(s);
+  stCalc();
+}
+function stStartDT(){var t=document.getElementById('stS').value||'00:00',d=new Date();var dt=isoOf(d)+'T'+t;if(dt>addMin(nowDT(),60))dt=addDays(isoOf(d),-1)+'T'+t;return dt;}
+function stCalc(){ // finish = start + run length ÷ speed, when the run length is known
+  var k=(document.getElementById('stK')||{}).value,L=k&&(cfg().runLen||{})[k],sp=parseFloat((document.getElementById('stSp')||{}).value);
+  if(L&&sp>0){var f=addMin(stStartDT(),L/sp*60);document.getElementById('stF').value=f.slice(11,16);}
+}
+function stSubmit(planId){
+  var s=stStartDT(),ft=document.getElementById('stF').value;if(!ft){toast('Enter the finish time');return;}
+  if(!(parseFloat(document.getElementById('stMm').value)>0)){toast('Enter the amount (mm)');return;}
+  var f=s.slice(0,10)+'T'+ft;if(f<=s)f=addDays(s.slice(0,10),1)+'T'+ft;          // finishes after midnight
+  var pl=planId?ops()[planId]:null;
+  if(startSet({m:document.getElementById('stM').value,k:document.getElementById('stK').value,run:document.getElementById('stR').value,s:s,f:f,
+     spd:document.getElementById('stSp').value,ang:document.getElementById('stA').value,mm:document.getElementById('stMm').value,told:pl?pl.mm:'',plan:planId||'',emp:pl&&pl.emp?pl.emp:(S.view==='staff'&&S.staffAs?S.staffAs:'')}))closeModal();
+}
+
+/* ── plan a move (supervisor) ─────────────────────────────────────────── */
+function openPlan(o){
+  if(!canEdit())return;o=o||{};var ex=o.id?ops()[o.id]:null;if(ex)o=ex;
+  var est=o.est||(o.k?fEst(o.k):'')||(o.m?machEst(mach(o.m)):'')||(S.supEst!=='ALL'?S.supEst:'');
+  var inE=function(e){return !est||e===est||(est==='Blakeney + Wretham'&&(e==='Blakeney'||e==='Wretham'));};
+  var M=machines(),F=fieldList().filter(function(f){return inE(f.estate);}).sort(function(a,b){return a.field<b.field?-1:1;});
+  var T=team(),staff=Object.keys(T).filter(function(e){return T[e].r==='staff'&&(!est||!T[e].est||!T[e].est.length||T[e].est.some(inE));});
+  if(!staff.length)staff=Object.keys(T);
+  var ms=o.m?machState(o.m):null,at=o.at||(ms&&ms.inAt&&ms.inAt>nowDT()?ms.inAt.slice(11,16):'18:00');
+  var k=o.k||'',mm=o.mm;if(k&&mm==null){var s=stat(BYKEY[k]);mm=s.mm2||'';s.g.forEach(function(x){if(x[0]>=isoOf(new Date())&&!mm)mm=x[1];});}
+  modal('<div style="display:flex;align-items:start"><h2 style="flex:1">'+(ex?'Edit move':'Plan a move')+'</h2><button class="x" style="font-size:20px;color:var(--tx3)" onclick="closeModal()">✕</button></div><div class="form">'
+    +'<div><label>Machine</label><select id="plM" onchange="plMachChange()">'+machOptions(M,o.m,inE)+'</select></div>'
+    +'<div><label>Move to field</label><select id="plK" onchange="plFieldChange()"><option value="">pick…</option>'+F.map(function(f){var kk=key(f),s=stat(f);return '<option value="'+esc(kk)+'"'+(kk===k?' selected':'')+'>'+esc(f.field)+' ('+s.lab.split(' —')[0]+')</option>';}).join('')+'</select></div>'
+    +'<div class="row2"><div><label>Run</label><input id="plR" type="number" inputmode="numeric" value="'+(o.run||(k?nextRun(k):''))+'"></div><div><label>Runs in field</label><input id="plN" type="number" inputmode="numeric" value="'+(k&&runsOf(k)||'')+'" placeholder="?"></div></div>'
+    +'<div class="row2"><div><label>Staff</label><select id="plE"><option value="">pick…</option>'+staff.map(function(e){return '<option value="'+esc(e)+'"'+(e===o.emp?' selected':'')+'>'+esc(nameOf(e))+'</option>';}).join('')+'</select></div><div><label>Move at</label><input id="plAt" type="time" value="'+esc(at)+'"></div></div>'
+    +'<div class="row2"><div><label>Amount (mm)</label><input id="plMm" type="number" inputmode="decimal" value="'+(mm||'')+'"></div><div><label>Date</label><input id="plD" type="date" value="'+(o.d||isoOf(new Date()))+'"></div></div>'
+    +(staff.length?'':'<div class="small" style="color:var(--r2)">No staff set up yet — add them under Settings → Team.</div>')
+    +'<div style="display:flex;gap:8px"><button class="btn" style="flex:1;padding:12px" onclick="plSave('+(ex?jsq(ex.id):'null')+')">'+(ex?'Save changes':'+ Add to tonight’s plan')+'</button>'+(ex?'<button class="btn r" onclick="delOp('+jsq(ex.id)+')">Delete</button>':'')+'</div></div>');
+}
+function plMachChange(){var ms=machState(document.getElementById('plM').value);if(ms.inAt&&ms.inAt>nowDT())document.getElementById('plAt').value=ms.inAt.slice(11,16);}
+function plFieldChange(){var k=document.getElementById('plK').value;if(!k)return;document.getElementById('plR').value=nextRun(k);document.getElementById('plN').value=runsOf(k)||'';
+  var s=stat(BYKEY[k]);if(!document.getElementById('plMm').value&&s.mm2)document.getElementById('plMm').value=s.mm2;}
+function plSave(id){
+  var g=function(x){return document.getElementById(x).value;};
+  if(!g('plM')||!g('plK')){toast('Pick a machine and a field');return;}
+  var n=parseInt(g('plN'));if(n>0&&n!==runsOf(g('plK'))){cfg().runs[g('plK')]=n;PEND.cfg=++SEQ;}
+  var u=user(),o=id?ops()[id]:{id:newId(),t:'plan',by:u?u.emp:''};
+  o.m=g('plM');o.k=g('plK');o.run=+g('plR')||1;o.emp=g('plE');o.at=g('plAt');o.mm=+g('plMm')||0;o.d=g('plD');
+  opPut(o);opsCommit();closeModal();
+}
+
+/* ── STAGE 2: supervisor page ─────────────────────────────────────────── */
+function estChoices(){var E={};fieldList().forEach(function(f){E[f.estate]=1;});machines().forEach(function(m){var e=machEst(m);if(e)E[e]=1;});return Object.keys(E).sort();}
+function vSup(){
+  if(is26())return '<div class="banner info">The supervisor page runs on the '+LIVE_YR+' season.</div>';
+  var ests=estChoices();if(!S.supEst)S.supEst=myEsts()[0]||'ALL';
+  var sel=S.supEst,inE=function(e){return sel==='ALL'||e===sel;};
+  var now=nowDT(),T=isoOf(new Date());
+  var M=machines().filter(function(m){return inE(machEst(m));});
+  var plans=opList('plan').filter(function(p){return !p.done&&p.d>=addDays(T,-1)&&inE(fEst(p.k)||machEst(mach(p.m)));}).sort(function(a,b){return (a.d+a.at)<(b.d+b.at)?-1:1;});
+  var nextFor=function(mid){return plans.filter(function(p){return p.m===mid;})[0];};
+  var allIn='',nRun=0,nIn=0;
+  var mrows=M.map(function(m){var st=machState(m.id),c=st.cur,nx=nextFor(m.id);
+    if(st.running){nRun++;if(st.inAt&&st.inAt>allIn)allIn=st.inAt;}else nIn++;
+    var fin=c?(st.running?'<b>'+tShow(st.inAt)+'</b> <span class="muted small">('+durShow(st.left)+')</span>':'<span class="badge c6">in '+tShow(st.inAt)+'</span>'):'<span class="muted">idle</span>';
+    var fpN=c?runsOf(c.k):null;
+    return '<tr><td class="fn" style="cursor:default;color:var(--tx)">'+esc(m.n)+'<div class="muted small">'+esc(machEst(m)||'not placed yet')+'</div></td>'
+      +'<td>'+(c?'<span class="lnk" onclick="openField('+jsq(c.k)+')">'+esc(fName(c.k))+'</span> <span class="muted">run '+c.run+(fpN?'/'+fpN:'')+'</span>':'—')+'</td>'
+      +'<td class="n">'+(c?tShow(c.s):'')+'</td><td class="n">'+fin+'</td>'
+      +'<td class="hide-m small">'+(c?(c.spd?c.spd+' m/h':'')+(c.ang?' · '+c.ang+'°':'')+(c.mm?' · '+c.mm+'mm':''):'')+'</td>'
+      +'<td class="small">'+(c?esc(first(nameOf(c.emp))):'')+'</td>'
+      +'<td class="small">'+(nx?'<span class="lnk" onclick="openPlan({id:'+jsq(nx.id)+'})">'+esc(nx.at)+' → '+esc(fName(nx.k))+' r'+nx.run+' · '+esc(first(nameOf(nx.emp)))+'</span>':'<button class="btn o sm" onclick="openPlan({m:'+jsq(m.id)+'})">+ plan move</button>')+'</td>'
+      +'<td>'+(st.running?'<button class="btn r sm" onclick="stopMachine('+jsq(m.id)+')">stop</button>':'')+'</td></tr>';}).join('');
+  var Fl=fieldList().filter(function(f){return inE(f.estate);});
+  var prog=[],todo=[];
+  Fl.forEach(function(f){var k=key(f),fp=fieldProg(k),s=stat(f);
+    if(fp.pid&&!fp.complete)prog.push([f,fp,s]);
+    else if((s.code===1||s.code===2||s.code===3)&&!plans.some(function(p){return p.k===k;}))todo.push([f,fp,s]);});
+  todo.sort(function(a,b){return ORD[a[2].code]-ORD[b[2].code];});
+  var prows=prog.map(function(x){var f=x[0],fp=x[1],k=key(f),pct=fp.N?Math.round(fp.done/fp.N*100):0;
+    return '<tr><td class="fn" onclick="openField('+jsq(k)+')">'+esc(f.field)+'<div class="sub">'+esc(crop(f))+'</div></td>'
+      +'<td><div class="bar" style="width:110px"><i style="width:'+pct+'%"></i></div><span class="small">'+fp.done+' of '+(fp.N||'?')+' runs done · '+fp.running.length+' running</span></td>'
+      +'<td class="n small">'+tShow(fp.start)+'</td><td class="n"><b>'+(fp.N?tShow(fp.est):'<span class="muted small">set runs</span>')+'</b></td>'
+      +'<td><button class="btn o sm" onclick="openPlan({k:'+jsq(k)+'})">+ plan next run</button></td></tr>';}).join('');
+  var trows=todo.map(function(x){var f=x[0],s=x[2],k=key(f);
+    return '<tr><td class="fn" onclick="openField('+jsq(k)+')">'+esc(f.field)+'<div class="sub">'+esc(crop(f))+(s.sub?' · '+esc(s.sub):'')+'</div></td><td>'+badge(s)+'</td>'
+      +'<td class="n">'+fmt(acres(f),1)+' ac</td><td class="n small">'+(runsOf(k)?runsOf(k)+' runs':'<span class="muted">runs?</span>')+'</td>'
+      +'<td><button class="btn sm" onclick="openPlan({k:'+jsq(k)+'})">+ plan</button></td></tr>';}).join('');
+  var byStaff={};plans.forEach(function(p){(byStaff[p.emp||'']=byStaff[p.emp||'']||[]).push(p);});
+  var plrows=plans.map(function(p){var m=mach(p.m),st=machState(p.m);
+    return '<tr><td class="n"><b>'+esc(p.at)+'</b>'+(p.d!==T?'<div class="muted small">'+dm(p.d)+'</div>':'')+'</td><td>'+esc(nameOf(p.emp))+'</td><td>'+esc(m?m.n:'?')+'</td>'
+      +'<td class="small">'+(st.cur?esc(fName(st.cur.k))+' r'+st.cur.run+' <span class="muted">(in '+tShow(st.inAt)+')</span>':'<span class="muted">idle</span>')+'</td>'
+      +'<td>→ <b>'+esc(fName(p.k))+'</b> run '+p.run+(p.mm?' · '+p.mm+'mm':'')+'</td><td><button class="btn o sm" onclick="openPlan({id:'+jsq(p.id)+'})">edit</button></td></tr>';}).join('');
+  return '<div class="filters"><select onchange="S.supEst=this.value;render()"><option value="ALL"'+(sel==='ALL'?' selected':'')+'>All estates</option>'+ests.map(function(e){return '<option'+(e===sel?' selected':'')+'>'+esc(e)+'</option>';}).join('')+'</select>'
+    +'<button class="btn sm" onclick="openPlan({est:S.supEst===\'ALL\'?\'\':S.supEst})">+ Plan a move</button><button class="btn o sm" onclick="pull()">↻ Refresh</button></div>'
+    +'<div class="kpis"><div class="kpi"><div class="l">Running</div><div class="v">'+nRun+'</div><div class="s">of '+M.length+' machines</div></div>'
+    +'<div class="kpi"><div class="l">All machines in by</div><div class="v">'+(allIn?allIn.slice(11,16):'—')+'</div><div class="s">'+(allIn?tShow(allIn).replace(/\d\d:\d\d$/,'')||'today':'')+'</div></div>'
+    +'<div class="kpi"><div class="l">Moves planned</div><div class="v">'+plans.length+'</div><div class="s">'+Object.keys(byStaff).length+' staff</div></div>'
+    +'<div class="kpi"><div class="l">To start</div><div class="v">'+todo.length+'</div><div class="s">due / definitely / programmed</div></div></div>'
+    +(M.length?'':'<div class="banner warn">No machines set up'+(sel!=='ALL'?' for '+esc(sel):'')+' yet — add them under <span class="lnk" onclick="go(\'set\')">Settings → Machines</span>.</div>')
+    +'<div class="card"><h3>Machines</h3><div class="tw"><table><thead><tr><th class="fn">Machine</th><th>On</th><th class="n">Started</th><th class="n">Finishes</th><th class="hide-m">Speed / angle</th><th>By</th><th>Next move</th><th></th></tr></thead><tbody>'+(mrows||'<tr><td colspan="8" class="muted pad">—</td></tr>')+'</tbody></table></div></div>'
+    +'<div class="card"><h3>Tonight’s moves <span class="muted small" style="font-weight:400">in time order — staff see these on their page</span></h3><div class="tw"><table><thead><tr><th class="n">Time</th><th>Staff</th><th>Machine</th><th>From</th><th>To</th><th></th></tr></thead><tbody>'+(plrows||'<tr><td colspan="6" class="muted pad">No moves planned.</td></tr>')+'</tbody></table></div></div>'
+    +'<div class="card"><h3>Fields in progress</h3><div class="tw"><table><thead><tr><th class="fn">Field</th><th>Progress</th><th class="n">Started</th><th class="n">Field finishes ~</th><th></th></tr></thead><tbody>'+(prows||'<tr><td colspan="5" class="muted pad">Nothing part-way through.</td></tr>')+'</tbody></table></div></div>'
+    +'<div class="card"><h3>To start — from the Records <span class="muted small" style="font-weight:400">due (1), definitely start (2) and programmed (3), not yet planned</span></h3><div class="tw"><table><thead><tr><th class="fn">Field</th><th>Status</th><th class="n">Area</th><th class="n">Runs</th><th></th></tr></thead><tbody>'+(trows||'<tr><td colspan="5" class="muted pad">Nothing waiting.</td></tr>')+'</tbody></table></div></div>';
+}
+
+/* ── STAGE 3: staff page ──────────────────────────────────────────────── */
+function vStaff(){
+  if(is26())return '<div class="banner info">The staff page runs on the '+LIVE_YR+' season.</div>';
+  var u=user();if(!u)return '<div class="card"><div class="pad"><p>Sign in with your employee number to see your moves.</p><button class="btn" onclick="signIn()">Sign in</button></div></div>';
+  var T=isoOf(new Date()),now=nowDT();
+  var who=S.staffAs||u.emp;
+  var mine=opList('plan').filter(function(p){return p.emp===who&&!p.done&&p.d>=addDays(T,-1);}).sort(function(a,b){return (a.d+a.at)<(b.d+b.at)?-1:1;});
+  var running=machines().map(function(m){return [m,machState(m.id)];}).filter(function(x){return x[1].cur&&x[1].cur.emp===who&&(x[1].running||x[1].inAt>addMin(now,-180));});
+  var card=function(inner,col){return '<div style="background:#fff;border:1px solid var(--bd);border-left:6px solid '+col+';border-radius:10px;padding:12px 14px;margin-bottom:10px">'+inner+'</div>';};
+  var mv=mine.map(function(p){var m=mach(p.m),st=machState(p.m),f=BYKEY[p.k];
+    return card('<div style="display:flex;align-items:center;gap:10px"><div style="font-family:var(--serif);font-weight:600;font-size:26px;color:var(--g1)">'+esc(p.at)+'</div><div style="flex:1"><div style="font-size:16px"><b>'+esc(m?m.n:'?')+'</b></div>'
+      +'<div class="small muted">'+(st.cur?'now on '+esc(fName(st.cur.k))+' run '+st.cur.run+(st.running?' · finishes '+tShow(st.inAt):' · finished '+tShow(st.inAt)):'not running')+'</div></div></div>'
+      +'<div style="font-size:17px;margin:8px 0">Move to <b>'+esc(f?f.field:p.k)+'</b> · run <b>'+p.run+'</b>'+(runsOf(p.k)?' of '+runsOf(p.k):'')+(p.mm?' · <b>'+p.mm+'mm</b>':'')+'</div>'
+      +(p.d!==T?'<div class="small muted">planned for '+dm(p.d)+'</div>':'')
+      +'<button class="btn" style="width:100%;padding:14px;font-size:16px" onclick="openStart('+jsq(p.id)+')">▶ I’ve moved it — start</button>','var(--r3)');}).join('');
+  var rn=running.map(function(x){var m=x[0],st=x[1],c=st.cur;
+    return card('<div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><b style="font-size:16px">'+esc(m.n)+'</b><div>'+esc(fName(c.k))+' · run '+c.run+(runsOf(c.k)?' of '+runsOf(c.k):'')+'</div>'
+      +'<div class="small muted">started '+tShow(c.s)+(c.spd?' · '+c.spd+' m/h':'')+(c.ang?' · '+c.ang+'°':'')+'</div></div>'
+      +'<div style="text-align:right">'+(st.running?'<div class="small muted">finishes</div><div style="font-family:var(--serif);font-weight:600;font-size:24px;color:var(--g1)">'+tShow(st.inAt)+'</div><div class="small">'+durShow(st.left)+' left</div>':'<span class="badge c6">finished '+tShow(st.inAt)+'</span>')+'</div></div>'
+      +(st.running?'<button class="btn r sm" style="margin-top:8px" onclick="stopMachine('+jsq(m.id)+')">Stopped early</button>':''),st.running?'var(--g2)':'#bbb');}).join('');
+  var T2=team(),sel='';
+  if(myRole()==='sup'||myRole()==='mgr'){var st=Object.keys(T2).filter(function(e){return T2[e].r==='staff';});
+    sel='<div class="filters"><span class="small muted">Showing the page for</span><select onchange="S.staffAs=this.value;render()"><option value="'+esc(u.emp)+'">me</option>'+st.map(function(e){return '<option value="'+esc(e)+'"'+(e===who?' selected':'')+'>'+esc(nameOf(e))+'</option>';}).join('')+'</select></div>';}
+  return sel+'<h3 style="font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.4px;color:var(--tx);margin:4px 0 10px">'+esc(first(nameOf(who)))+'’s moves</h3>'+(mv||'<div class="muted pad">No moves planned for you.</div>')
+    +'<h3 style="font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.4px;color:var(--tx);margin:18px 0 10px">Machines you’ve started</h3>'+(rn||'<div class="muted pad">None running.</div>')
+    +'<button class="btn o" style="width:100%;padding:12px;margin-top:8px" onclick="openStart(null)">+ Start a machine that wasn’t planned</button>';
+}
+
+function fieldSetsHtml(k){
+  var fp=fieldProg(k);if(!fp.pid)return '';
+  return '<div class="small" style="margin:6px 0 4px;color:var(--g1);font-weight:600">Current cycle — machine runs</div><div class="plist">'+fp.sets.slice().reverse().map(function(x){var m=mach(x.m);
+    return '<div><b style="min-width:48px">run '+x.run+'</b><span>'+esc(m?m.n:'?')+'</span><span class="muted">'+tShow(x.s)+' → '+tShow(x.end||x.f)+'</span><span class="muted small" style="flex:1">'+(x.spd?x.spd+' m/h ':'')+(x.ang?x.ang+'° ':'')+(x.mm?x.mm+'mm ':'')+esc(first(nameOf(x.emp)))+'</span><button class="x" onclick="delOp('+jsq(x.id)+')">✕</button></div>';}).join('')+'</div>';
+}
+/* ── settings: machines & team ────────────────────────────────────────── */
+function setupInfo(){var u=user();return '<div class="card"><div class="pad small">Signed in as <b>'+esc(u?u.name:'')+'</b> ('+esc(u?u.emp:'')+') · '+({sup:'Supervisor',staff:'Staff',mgr:'Manager'}[myRole()]||'not on the irrigation team yet')+(myEsts().length?' · '+esc(myEsts().join(', ')):'')+'<div style="margin-top:8px"><button class="btn r sm" onclick="signOut()">Sign out of this phone</button></div></div></div>';}
+function setupHtml(){
+  var M=machines(),ests=estChoices(),T=team(),C=cfg(),src=assetSrc(),AL=assetList(),off=C.machOff||{},home=C.machEst||{};
+  var eOpts=function(sel){return '<option value="">—</option>'+ests.map(function(e){return '<option'+(e===sel?' selected':'')+'>'+esc(e)+'</option>';}).join('');};
+  var arows=AL.map(function(a){var id='A:'+a.id,m=mach(id)||{id:id,est:home[a.id]||a.est||''},st=machState(id);
+    return '<tr'+(off[a.id]?' style="opacity:.5"':'')+'><td><b>'+esc(a.id)+'</b></td><td>'+esc(a.make)+' '+esc(a.model)+'<div class="muted small">'+esc(a.serial||'')+(a.owner?' · '+esc(a.owner):'')+'</div></td>'
+      +'<td class="small">'+(st.cur?esc(machEst(m))+(st.running?' <span class="badge c4">running</span>':''):'<span class="muted">—</span>')+'</td>'
+      +'<td><select onchange="machHome('+jsq(a.id)+',this.value)" style="padding:4px">'+eOpts(home[a.id]||a.est||'')+'</select></td>'
+      +'<td><input type="checkbox"'+(off[a.id]?'':' checked')+' onchange="machUse('+jsq(a.id)+',this.checked)"></td></tr>';}).join('');
+  var xrows=(C.mach||[]).map(function(m,i){return '<tr><td><b>'+esc(m.n)+'</b></td><td class="muted small">added here</td><td class="small">'+esc(machEst(m)||'—')+'</td>'
+    +'<td><select onchange="cfg().mach['+i+'].est=this.value;cfgTouch()" style="padding:4px">'+eOpts(m.est)+'</select></td>'
+    +'<td><button class="x" onclick="if(confirm(\'Remove '+esc(m.n).replace(/'/g,'')+'?\')){cfg().mach.splice('+i+',1);cfgTouch();}">✕</button></td></tr>';}).join('');
+  var mrows=arows+xrows;
+  var trows=Object.keys(T).sort(function(a,b){return nameOf(a)<nameOf(b)?-1:1;}).map(function(e){var t=T[e];
+    return '<tr><td>'+esc(nameOf(e))+' <span class="muted small">'+esc(e)+'</span></td><td><select onchange="team()['+jsq(e)+'].r=this.value;cfgTouch()" style="padding:5px">'
+      +[['staff','Staff'],['sup','Supervisor'],['mgr','Manager / agronomist']].map(function(r){return '<option value="'+r[0]+'"'+(t.r===r[0]?' selected':'')+'>'+r[1]+'</option>';}).join('')+'</select></td>'
+      +'<td class="small">'+ests.map(function(x){return '<label style="white-space:nowrap;margin-right:6px"><input type="checkbox"'+((t.est||[]).indexOf(x)>=0?' checked':'')+' onchange="teamEst('+jsq(e)+','+jsq(x)+',this.checked)"> '+esc(x)+'</label>';}).join(' ')+'</td>'
+      +'<td><button class="x" onclick="delete team()['+jsq(e)+'];cfgTouch()">✕</button></td></tr>';}).join('');
+  var uopts=(FP.USERS||[]).filter(function(x){return !T[x.emp];}).map(function(x){return '<option value="'+esc(x.name+' ('+x.emp+')')+'">';}).join('');
+  var zc=(FP.WATER_CFG.zones||[]).filter(function(z){return z.machines;}).map(function(z){return esc(z.name)+' '+z.machines;}).join(' · ');
+  return '<div class="card"><h3>🚿 Machines <span class="muted small" style="font-weight:400">'+(src?AL.length+' irrigators from the Checklist App asset list · '+esc(src.src)+(SRC.assets?' · '+esc(SRC.assets):''):'not loaded yet')+'</span></h3><div class="pad small">'
+    +'<div class="muted" style="margin-bottom:8px">The machine list comes from the <b>Checklist App asset list</b> (AssetList.xlsx, “Irrigator” rows) so it’s the same list the daily checks use. <b>Now on</b> follows the machine — it’s the estate of the field it was last started on. <b>Home</b> is only where a machine sits before it’s first used. Untick machines that are off the fleet.</div>'
+    +'<div class="filters"><label class="btn sm" style="display:inline-block">⬆ Import AssetList.xlsx<input type="file" accept=".xlsx" style="display:none" onchange="importAssets(this)"></label>'
+    +'<button class="btn o sm" onclick="loadAssets(true).then(render)">↻ Re-read shared file</button></div>'
+    +'<div class="tw" style="max-height:50vh"><table><thead><tr><th>Fleet no</th><th>Machine</th><th>Now on</th><th>Home</th><th>In use</th></tr></thead><tbody>'+(mrows||'<tr><td colspan="5" class="muted">No machines yet — import the asset list.</td></tr>')+'</tbody></table></div>'
+    +'<div class="filters" style="margin-top:8px"><span class="muted">Not on the asset list (e.g. hired):</span><input id="nmN" placeholder="name"><select id="nmE">'+eOpts('')+'</select><button class="btn o sm" onclick="addMach()">+ Add</button></div></div></div>'
+    +'<div class="card"><h3>👥 Team</h3><div class="pad small"><div class="muted" style="margin-bottom:8px">Supervisors open on the Supervisor page for their estates; staff open on their own Moves page. Everyone signs in with their FieldPlan employee number — no PIN. Only people listed here (plus FieldPlan admins/editors) can record irrigation.</div>'
+    +'<div class="tw"><table><thead><tr><th>Person</th><th>Role</th><th>Estates</th><th></th></tr></thead><tbody>'+(trows||'<tr><td colspan="4" class="muted">Nobody yet.</td></tr>')+'</tbody></table></div>'
+    +'<div class="filters" style="margin-top:8px"><input id="ntU" list="ntUs" placeholder="add a person…" style="min-width:220px"><datalist id="ntUs">'+uopts+'</datalist><select id="ntR"><option value="staff">Staff</option><option value="sup">Supervisor</option><option value="mgr">Manager / agronomist</option></select><button class="btn sm" onclick="addTeam()">+ Add</button></div></div></div>';
+}
+function addMach(){var n=document.getElementById('nmN').value.trim();if(!n){toast('Name the machine');return;}(cfg().mach=cfg().mach||[]).push({id:newId(),n:n,est:document.getElementById('nmE').value});cfgTouch();}
+function addTeam(){var v=document.getElementById('ntU').value,m=/\((\w+)\)\s*$/.exec(v);if(!m){toast('Pick a person from the list');return;}team()[m[1]]={r:document.getElementById('ntR').value,est:[]};cfgTouch();}
+function teamEst(e,x,on){var t=team()[e];t.est=(t.est||[]).filter(function(y){return y!==x;});if(on)t.est.push(x);cfgTouch();}
+function setRuns(k,v){if(!canEdit())return;var n=parseInt(v);if(n>0)cfg().runs[k]=n;else delete cfg().runs[k];cfgTouch();}
+function setRunLen(k,v){if(!canEdit())return;var n=parseFloat(v);if(n>0)cfg().runLen[k]=n;else delete cfg().runLen[k];cfgTouch();}
+
+/* ── shell ─────────────────────────────────────────────────────────────── */
+var VIEWS=[['plan','Records'],['sup','Supervisor'],['staff','My moves'],['log','Log pass'],['agro','Last watered'],['tot','Totals'],['set','Settings']];
+function go(v){S.view=v;saveUi();render();window.scrollTo(0,0);}
+function setSeason(y){S.season=y;ZMAP=null;S.st='';render();}
+function render(){
+  if(!FP||!LOCAL)return;
+  var u=user();
+  document.getElementById('who').textContent=u?u.name.split(' ')[0]:'Sign in';paintLive();
+  document.getElementById('seasonSeg').innerHTML=[[LIVE_YR,LIVE_YR+' live'],['2026','2026 records']].map(function(x){return '<button class="'+(S.season===x[0]?'on':'')+'" onclick="setSeason(\''+x[0]+'\')">'+x[1]+'</button>';}).join('');
+  var n=nPending(),b=document.getElementById('saveBtn');b.textContent=SAVING?'Saving…':n?(_saveErr?'Save ('+n+')':'Saving '+n+'…'):'Saved ✓';b.className='savebtn'+(n?' dirty':'');
+  var VV=myRole()==='staff'?VIEWS.filter(function(v){return v[0]==='staff'||v[0]==='agro';}):VIEWS;if(VV.every(function(v){return v[0]!==S.view;}))S.view=VV[0][0];
+  document.getElementById('seasonSeg').style.display=myRole()==='staff'?'none':'';
+  document.getElementById('nav').innerHTML=VV.map(function(v){return '<button class="'+(S.view===v[0]?'on':'')+'" onclick="go(\''+v[0]+'\')">'+v[1]+'</button>';}).join('');
+  var top='';
+  if(n&&_saveErr)top+='<div class="banner warn">⚠ <b>'+n+' change'+(n>1?'s':'')+' not saved yet</b> — '+esc(_saveErr)+'. They are kept on this device and will send automatically.</div>';
+  if(is26())top+='<div class="banner info">Viewing the <b>2026 records</b> (read-only, from the spreadsheet) as at <input type="date" value="'+S.asAt+'" min="2026-03-23" max="2026-10-24" onchange="S.asAt=this.value;saveUi();render()" style="padding:2px 4px">. Statuses are worked out as if it were that day.</div>';
+  if(!u)top+='<div class="banner warn">Not signed in — varieties/onion types from Omnia need sign-in, and so does saving. <span class="lnk" onclick="signIn()">Sign in</span></div>';
+  var html={plan:vPlanner,sup:vSup,staff:vStaff,log:vLog,agro:vAgro,tot:vTotals,set:vSettings}[S.view]||vPlanner;
+  var y=window.scrollY;document.getElementById('main').innerHTML=top+html();window.scrollTo(0,y);
+  document.documentElement.style.setProperty('--hh',document.getElementById('hdr').offsetHeight+'px');
+  if(S.view==='log'&&window._logKey){var lf=document.getElementById('lgField');if(lf)logPick(lf.value);}
+}
+
+/* ── boot ──────────────────────────────────────────────────────────────── */
+async function loadFieldPlan(force){
+  var cached=null;try{cached=JSON.parse(localStorage.getItem('irr_fp_cache')||'null');}catch(e){}
+  if(cached&&!force&&!FP){FP=cached;buildFns();indexF();SRC.fp='cached copy '+new Date(cached.t).toLocaleString('en-GB');}
+  try{
+    var r=await fetch(FP_URL+(FP_URL.indexOf('?')<0?'?':'&')+'t='+Math.floor(Date.now()/60000),{cache:'no-cache'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var fresh=parseFieldPlan(await r.text());
+    FP=fresh;buildFns();indexF();ZMAP=null;SRC.fp='live, read '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' · '+FP.F.length+' fields';
+    try{localStorage.setItem('irr_fp_cache',JSON.stringify(FP));}catch(e){}
+  }catch(e){if(!FP)throw e;SRC.fp+=' (live read failed: '+e.message+')';}
+}
+async function loadR26(){try{var r=await fetch((QS.get('r26')||RAW+'irr_2026.json')+'?t='+Math.floor(Date.now()/3600000));if(r.ok)R26=await r.json();}catch(e){}}
+async function refreshAll(force){
+  await loadFieldPlan(force);
+  try{var oc=JSON.parse(localStorage.getItem('irr_om_cache')||'null');if(oc&&!OMT){Object.assign(OMV,oc.v);SRC.om='last copy '+new Date(oc.t).toLocaleString('en-GB');}}catch(e){}
+  render();
+  await loadOmnia();ZMAP=null;await loadAssets(force);render();
+}
+(async function boot(){
+  try{
+    await Promise.all([loadFieldPlan(false),loadR26()]);
+    try{var oc=JSON.parse(localStorage.getItem('irr_om_cache')||'null');if(oc){Object.assign(OMV,oc.v);SRC.om='last copy '+new Date(oc.t).toLocaleString('en-GB');}}catch(e){}
+    if(!user()){await new Promise(function(res){signIn(res,true);});}
+    await loadData();
+    if(!_s0){var rr=myRole();S.view=rr==='sup'?'sup':rr==='staff'?'staff':S.view;}
+    render();
+    loadOmnia().then(function(){ZMAP=null;render();});
+    loadAssets();
+  }catch(e){
+    document.getElementById('main').innerHTML='<div class="banner err">Could not load FieldPlan: '+esc(e.message)+'. Check your connection and reload.</div>';
+  }
+})();
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&LOCAL){pull();if(nPending())save(true);}});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('irr-sw.js').catch(function(){});
+window.addEventListener('beforeunload',function(e){if(nPending()){e.preventDefault();e.returnValue='';}});
+</script>
+</body>
+</html>
