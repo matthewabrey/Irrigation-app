@@ -133,6 +133,38 @@ tr:hover td.fn{background:#fbfaf6}
 .gapl div{display:flex;align-items:center;gap:6px}
 .gapl input{width:64px;padding:6px;border:1px solid var(--bd2);border-radius:6px}
 .loading{padding:40px;text-align:center;color:var(--tx3)}
+/* records sheet */
+.shw{max-height:72vh}
+table.sheet{border-collapse:separate;border-spacing:0}
+table.sheet th{text-align:center;font-size:10.5px;padding:5px 2px;min-width:52px;line-height:1.25}
+table.sheet th.fn{text-align:left;min-width:330px}
+table.sheet td{border-bottom:1px solid #ece9df;border-left:1px solid #f1eee6}
+td.shf{display:flex;align-items:center;gap:8px;min-width:330px;max-width:330px;white-space:normal;cursor:default;color:var(--tx);line-height:1.25;padding-top:4px;padding-bottom:4px}
+td.shf .lnk2{font-size:13px}
+.sc.plan.old{background:#f5f1e6;color:#9a968a}
+td.shf .fnm{flex:1;min-width:0}
+.lnk2{color:var(--g1);cursor:pointer;font-weight:600}
+.pri{width:22px;height:22px;border-radius:5px;border:2px solid var(--bd2);cursor:pointer;flex:none;padding:0}
+.pri.r{background:var(--r1);border-color:var(--r1)}.pri.o{background:var(--r2);border-color:var(--r2)}.pri.g{background:var(--pri);border-color:var(--pri)}.pri.none{background:#fff}
+.stsel{font-size:11px;padding:3px;border:1px solid var(--bd2);border-radius:5px;max-width:92px;background:#fff}
+.stsel.fin{background:#eceef3;color:#5a6680;font-weight:600}.stsel.scab{background:#fdf3d8;color:#6b4e00;font-weight:600}
+tr.finrow td.sc{background:#f7f6f2;color:#aaa}
+td.sc{text-align:center;font-size:12px;font-weight:600;height:44px;cursor:cell;padding:2px}
+td.sc.wk,table.sheet th.wk{border-left:2px solid var(--bd)}
+td.sc.tday,table.sheet th.tday{box-shadow:inset 2px 0 0 var(--r2),inset -2px 0 0 var(--r2)}
+table.sheet th.tday{background:#fdf1e2;color:var(--tx)}
+.sc.pred{background:#fbe3e0;color:var(--r1);font-size:10px;font-weight:800;line-height:1.1}
+.sc.plan{background:#fff1cf;color:#5d4300;font-size:13px}
+.sc.miss{background:var(--r1);color:#fff;font-size:13px;animation:flash 1s steps(1) infinite}
+.sc.done{background:var(--pri);color:#fff;font-size:13px}.sc.done.low{background:#d6e6be;color:#4b5a37}
+@keyframes flash{50%{background:#fff;color:var(--r1)}}
+.cin{width:100%;height:30px;border:2px solid var(--pri);border-radius:4px;text-align:center;font:600 13px var(--sans);padding:0}
+.shkey{padding:8px 14px;border-bottom:1px solid var(--bd);color:var(--tx3);line-height:2}
+.shkey .sc{display:inline-block;padding:1px 6px;border-radius:4px;height:auto;animation:none}
+.seg2{display:inline-flex;background:#fff;border:1px solid var(--bd2);border-radius:6px;padding:2px}
+.seg2 button{border:0;background:transparent;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:13px;font-weight:500;color:var(--tx3)}
+.seg2 button.on{background:var(--pri);color:#fff}
+.pvbar{background:#f2c94c;color:#3e2b00;text-align:center;font-size:12.5px;font-weight:600;padding:6px 10px}
 /* sign-in screen — same as the Day to Day Work App login */
 .login{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
 .login .box{background:#fff;border-radius:12px;width:100%;max-width:352px;padding:22px 19px 19px;box-shadow:0 1px 3px rgba(0,0,0,.06);text-align:center}
@@ -146,7 +178,7 @@ tr:hover td.fn{background:#fbfaf6}
 .login input:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 2px rgba(125,184,43,.35)}
 .login .btn{width:100%;padding:8px 16px;font-size:14px}
 .login .err{color:var(--r1);font-size:12.5px;min-height:16px;text-align:left;margin:-6px 0 6px}
-@media(max-width:600px){main{padding:10px}th,td{padding:6px 6px}.hide-m{display:none}.brand b{font-size:15px}.brand img{height:32px}.hrow{min-height:54px;gap:8px}}
+@media(max-width:600px){table.sheet th.fn,td.shf{min-width:200px;max-width:200px}td.shf .stsel{max-width:70px}main{padding:10px}th,td{padding:6px 6px}.hide-m{display:none}.brand b{font-size:15px}.brand img{height:32px}.hrow{min-height:54px;gap:8px}}
 </style>
 </head>
 <body>
@@ -159,13 +191,13 @@ tr:hover td.fn{background:#fbfaf6}
     <button class="savebtn" id="saveBtn" onclick="save(false)">Saved</button>
   </div>
 </header>
-<nav id="nav"></nav>
+<div id="pvbar"></div><nav id="nav"></nav>
 <main id="main"><div class="loading">Loading fields from FieldPlan…</div></main>
 <div id="modalHost"></div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   ABREYS IRRIGATION — v1 (10/11/26)
+   ABREYS IRRIGATION — v1.1 Records sheet (11/11/26) — irrigation.abreys.app
    Masters (re-read every load, never copied): FieldPlan.html (fields, estates,
    zones, cropping, water rates, isOurs/zone rules) and Omnia via the relay
    (varieties, onion types, working areas, field names).
@@ -179,6 +211,9 @@ var RAW='https://raw.githubusercontent.com/matthewabrey/Abrey-Cropping/main/';
 var QS=new URLSearchParams(location.search);
 var FP_URL=QS.get('fp')||(RAW+'FieldPlan.html');
 var LIVE_YR='2027';            // current season = harvest 2027
+// PREVIEW: a self-contained copy with a baked-in snapshot (window.__SNAP) — never touches live data
+var SNAP=window.__SNAP||null, PREVIEW=!!SNAP, FAKE_TODAY=null;
+if(PREVIEW){LIVE_YR=SNAP.yr;FAKE_TODAY=SNAP.today;}
 var IRR_CROPS=['Potatoes','Salad Potatoes','Seed Potatoes','Carrots','Parsnips','Onions'];
 var AC_PER_HA=2.471, GAL_PER_ACIN=22610.67, M3_PER_ACIN=102.79, MIN_MM=5;
 var MONTHS=['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'];
@@ -202,7 +237,8 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){retur
 function jsq(s){return "decodeURIComponent('"+encodeURIComponent(s)+"')";}
 function pad(n){return (n<10?'0':'')+n;}
 function isoOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
-function todayIso(){return S.season===LIVE_YR?isoOf(new Date()):S.asAt;}
+function today(){return FAKE_TODAY||isoOf(new Date());}
+function todayIso(){return S.season===LIVE_YR?today():S.asAt;}
 function addDays(iso,n){var d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return isoOf(d);}
 function dDiff(a,b){return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);}
 function dm(iso){return iso?iso.slice(8,10)+'/'+iso.slice(5,7):'';}
@@ -210,7 +246,7 @@ function fmt(n,dp){if(n==null||isNaN(n))return '—';return Number(n).toLocaleSt
 function clone(o){return JSON.parse(JSON.stringify(o));}
 function newId(){var u=user();return Date.now().toString(36)+Math.random().toString(36).slice(2,5)+(u?u.emp:'');}
 function toast(t){var el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(function(){el.remove();},2600);}
-function user(){try{return JSON.parse(localStorage.getItem('fp_user')||'null');}catch(e){return null;}}
+function user(){try{var u=JSON.parse(localStorage.getItem('fp_user')||'null');if(u)return u;}catch(e){}return window._u||null;}
 function saveUi(){try{localStorage.setItem('irr_ui',JSON.stringify({view:S.view,est:S.est,crop:S.crop,asAt:S.asAt}));}catch(e){}}
 
 /* ── reading FieldPlan's source: bracket matching that respects strings/comments ── */
@@ -297,7 +333,7 @@ function applyOmniaCropping(rows){
       if(tx&&tx!==t0&&prev.xs.indexOf(tx)<0)prev.xs.push(tx);}
   });
 }
-async function loadOmnia(){
+async function loadOmnia(){if(PREVIEW){Object.assign(OMV,SNAP.om||{});SRC.om='preview snapshot';return;}
   var u=user(); if(!u){SRC.om='sign in to load Omnia varieties';return;}
   try{
     var r1=await fetch(RELAY+'omnia?file=Fields.csv&emp='+encodeURIComponent(u.emp));
@@ -352,8 +388,9 @@ function safeOurs(f,y){try{return FN.isOurs(f,y);}catch(e){return true;}}
 function rate(f){try{return FN.wcRate(f,S.season);}catch(e){return FP.WC[crop(f)];}}
 
 /* ── warning days (look-back): variety/type line beats crop line ───────── */
-function gapFor(c,sub){
+function gapFor(c,sub,os){
   var g=cfg().gap||{};
+  if(os&&g[c+'|Out of scab']!=null&&g[c+'|Out of scab']!=='')return +g[c+'|Out of scab'];
   if(sub&&g[c+'|'+sub]!=null&&g[c+'|'+sub]!=='')return +g[c+'|'+sub];
   if(g[c]!=null&&g[c]!=='')return +g[c];
   return null;
@@ -365,13 +402,16 @@ function stat(f){
   var p=(L.p||[]).filter(function(x){return x[0]<=T||!is26();}).slice().sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:0;});
   var last=null,mm=0,apps=0;
   p.forEach(function(x){var ap=+x[2]||0;if(ap>MIN_MM){mm+=ap;apps++;if(!last||x[0]>last)last=x[0];}});
-  var perAc=mm/25.4, sb=sub1(f), gap=gapFor(c,sb);
+  var perAc=mm/25.4, sb=sub1(f), gap=gapFor(c,sb,!is26()&&L.os);
   var days=last?dDiff(last,T):null, st=is26()?(fin26(f)?9:0):(L.st||0);
   var g=(is26()?[]:(L.g||[])).slice().sort(function(a,b){return a[0]<b[0]?-1:1;});
   var nextProg=null; g.forEach(function(x){if(x[0]>=T&&(!nextProg||x[0]<nextProg))nextProg=x[0];});
   var dueIso=(last&&gap!=null)?addDays(last,gap):null;
+  // a planned day that has gone with no pass on or after it = missed (flashes red on the sheet)
+  var missed=g.filter(function(x){return x[0]<T&&!p.some(function(q){return q[0]>=x[0]&&(+q[2]||0)>0;});}).map(function(x){return x[0];});
   var code,lab;
   if(st===9){code=7;lab='Finished for season';}
+  else if(missed.length){code=1;lab='1 · Missed — planned '+dm(missed[missed.length-1])+', not started';}
   else if(st===2){code=2;lab='2 · Definitely start'+(L.mm2?' · '+L.mm2+'mm':'');}
   else if(nextProg){code=3;lab='3 · Programme '+dm(nextProg)+(nextProg===T?' (today)':'');}
   else if(st===3){code=3;lab='3 · On programme';}
@@ -379,7 +419,7 @@ function stat(f){
   else if(gap==null){code=5;lab='Set warning days';}
   else if(days>=gap){code=1;lab='1 · Due — '+days+'d since ('+gap+'d set)';}
   else{code=4;lab='OK · due in '+(gap-days)+'d';}
-  return {c:c,k:k,L:L,p:p,g:g,nextProg:nextProg,dueIso:dueIso,last:last,days:days,gap:gap,perAc:perAc,mm:mm,apps:apps,st:st,mm2:L.mm2,code:code,lab:lab,sub:sb};
+  return {missed:missed,pr:L.pr||'',os:!!L.os,c:c,k:k,L:L,p:p,g:g,nextProg:nextProg,dueIso:dueIso,last:last,days:days,gap:gap,perAc:perAc,mm:mm,apps:apps,st:st,mm2:L.mm2,code:code,lab:lab,sub:sb};
 }
 function badge(s){return '<span class="badge c'+s.code+'">'+esc(s.lab)+'</span>';}
 var ORD={1:0,2:1,3:2,5:3,4:4,6:5,7:6};
@@ -419,6 +459,7 @@ function rec(f){var k=key(f),L=LOCAL.log||(LOCAL.log={});return L[k]||(L[k]={});
 function markField(f){var k=key(f),r=rec(f);r.e=liveEst(f);r.ac=Math.round(acres(f)*100)/100;r.n=f.field;PEND.f[k]=++SEQ;}
 function touch(f){markField(f);persistShadow();schedSave();render();}
 function persistShadow(){
+  if(PREVIEW)return;
   try{var lg={},op={};Object.keys(PEND.f).forEach(function(k){lg[k]=LOCAL.log[k]||null;});
     Object.keys(PEND.o||{}).forEach(function(k){op[k]=(LOCAL.ops||{})[k]||null;});
     localStorage.setItem('irr_shadow',JSON.stringify({pend:PEND,log:lg,ops:op,cfg:PEND.cfg?LOCAL.cfg:null,seq:SEQ,t:Date.now()}));}catch(e){}
@@ -439,7 +480,7 @@ function addPass(k,iso,told,ap){
   if(!iso){toast('Pick a date');return false;}if(isNaN(ap)){toast('Enter the applied mm');return false;}
   var u=user(),r=rec(f);
   (r.p=r.p||[]).push([iso,+told||0,+ap,u?u.emp:'',newId()]);
-  r.g=(r.g||[]).filter(function(x){return x[0]!==iso;});   // the pass fulfils that day's booking
+  r.g=(r.g||[]).filter(function(x){return x[0]>iso;});     // the pass fulfils that day's plan and any earlier missed ones
   if(+ap>MIN_MM&&(r.st===2||r.st===3))r.st=0;              // a counting pass resets 2/3 to auto
   touch(f);toast('Logged '+ap+'mm on '+f.field+' '+dm(iso)+(+ap<=MIN_MM?' (5mm or less — not counted)':''));return true;
 }
@@ -464,6 +505,7 @@ function rebase(prev){
   if(PEND.cfg&&prev.cfg)LOCAL.cfg=prev.cfg;
 }
 async function fetchServer(){
+  if(PREVIEW){if(window._pvLoaded)return null;window._pvLoaded=1;SRC.data='preview snapshot';LIVE_OK=Date.now();return clone(SNAP.data);}
   var u=user(),j=null;
   try{var r=await fetch(RELAY+'irr-data?emp='+encodeURIComponent(u?u.emp:''),{cache:'no-store'});
     if(r.ok){var o=await r.json();if(o&&o.ok){j=o.data||emptyData();SRC.data='saved data (live)';SRC.relay=true;LIVE_OK=Date.now();window._lastPull=Date.now();}}}catch(e){}
@@ -496,6 +538,7 @@ function paintLive(){var el=document.getElementById('live');if(!el)return;
 var SAVING=false,_saveT=null,_saveErr='';
 function schedSave(){clearTimeout(_saveT);_saveT=setTimeout(function(){save(true);},2500);}
 async function save(auto){
+  if(PREVIEW){if(nPending()){SERVER=clone(LOCAL);PEND={f:{},o:{},del:{},cfg:0};_saveErr='';render();if(!auto)toast('Preview — kept on this page only, not saved to the live app');}return;}
   if(SAVING){schedSave();return;}
   if(!nPending()){if(!auto)toast('All saved');return;}
   var u=user();if(!u){signIn();_saveErr='sign in to save';render();return;}
@@ -552,7 +595,7 @@ function signIn(after,gate){
   }
   var go=function(){var emp=document.getElementById('lgEmp').value.trim();var x=(FP.USERS||[]).filter(function(z){return z.emp===emp;})[0];
     if(!x){document.getElementById('lgErr').textContent='Employee number not recognised.';return;}
-    localStorage.setItem('fp_user',JSON.stringify({name:x.name,emp:x.emp,role:x.role,ts:Date.now()}));closeModal();
+    window._u={name:x.name,emp:x.emp,role:x.role,ts:Date.now()};try{localStorage.setItem('fp_user',JSON.stringify(window._u));}catch(e){}closeModal();
     if(typeof after==='function')after();if(LOCAL){var rr=myRole();if(rr==='sup')S.view='sup';else if(rr==='staff')S.view='staff';render();}
     loadOmnia().then(function(){ZMAP=null;if(LOCAL)render();});};
   document.getElementById('lgGo').onclick=go;document.getElementById('lgEmp').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
@@ -578,6 +621,7 @@ function filtered(){
   idx.sort(function(a,b){
     var fa=list[a],fb=list[b],sa=stats[a],sb=stats[b],va,vb;
     if(!sk){
+      if(S.view==='plan'){var PR={r:0,o:1,g:2},pa=PR[sa.pr]!=null?PR[sa.pr]:3,pb=PR[sb.pr]!=null?PR[sb.pr]:3;if(pa!==pb)return pa-pb;}
       if(S.view==='agro'){va=sa.days==null?-1:sa.days;vb=sb.days==null?-1:sb.days;if(va!==vb)return vb-va;}
       else{var d=ORD[sa.code]-ORD[sb.code];if(d)return d;
         if(sa.code===1)return (sb.days-sb.gap)-(sa.days-sa.gap);
@@ -589,6 +633,7 @@ function filtered(){
     else if(sk==='crop'){va=sa.c+'|'+sa.sub;vb=sb.c+'|'+sb.sub;}
     else if(sk==='variety'){va=sa.sub||'~';vb=sb.sub||'~';}
     else if(sk==='acres'){va=fa.ha;vb=fb.ha;}
+    else if(sk==='prio'){var PQ={r:0,o:1,g:2};va=PQ[sa.pr]!=null?PQ[sa.pr]:3;vb=PQ[sb.pr]!=null?PQ[sb.pr]:3;}
     else if(sk==='last'){va=sa.last||'';vb=sb.last||'';}
     else if(sk==='days'){va=sa.days==null?-1:sa.days;vb=sb.days==null?-1:sb.days;}
     else if(sk==='applied'){va=sa.perAc;vb=sb.perAc;}
@@ -617,7 +662,71 @@ function filtersHtml(all){
 }
 
 /* ── VIEW: Planner (day grid + list) ───────────────────────────────────── */
+/* ── RECORDS SHEET — the Excel-style day grid ───────────────────────────
+   Pred start (red) appears on the predicted day; type any amount in any day to plan it;
+   a planned day that passes without a start flashes red; when the team starts it the cell
+   turns green with the amount they put on. Priority box and Out of scab / Finished per field. */
+function vSheet(){
+  var R=filtered(),T=todayIso(),ro=is26();
+  var start=addDays(T,-7+S.gOff*7),days=[];for(var i=0;i<29;i++)days.push(addDays(start,i));
+  var head=days.map(function(d){var dt=new Date(d+'T12:00:00'),wd=['Su','Mo','Tu','We','Th','Fr','Sa'][dt.getDay()];
+    return '<th class="'+(d===T?'tday':'')+(dt.getDay()===1?' wk':'')+'">'+wd+'<br>'+dm(d)+'</th>';}).join('');
+  var body=R.list.map(function(f,i){
+    var s=R.stats[i],k=s.k,pass={},plan={},run=ro?null:fieldProg(k);
+    s.p.forEach(function(x){pass[x[0]]=(pass[x[0]]||0)+(+x[2]||0);});s.g.forEach(function(x){plan[x[0]]=x[1];});
+    var showPred=s.st!==9&&!s.missed.length&&!s.g.some(function(x){return x[0]>=T;})&&!(run&&run.running&&run.running.length);
+    var pred=showPred&&s.dueIso?(s.dueIso<T?T:s.dueIso):null;
+    var cells=days.map(function(d){
+      var c='',t='',cl=(d===T?'tday':'')+(new Date(d+'T12:00:00').getDay()===1?' wk':'');
+      if(pass[d]!=null){c='done'+(pass[d]<=MIN_MM?' low':'');t=fmt(pass[d],0)+(run&&run.pid&&!run.complete&&d===run.start.slice(0,10)?' ▶':'');}
+      else if(plan[d]!=null){t=plan[d];c=d>=T?'plan':(s.missed.indexOf(d)>=0?'miss':'plan old');}
+      else if(pred===d){c='pred';t=s.dueIso<T?'Pred start '+(dDiff(s.dueIso,T))+'d over':'Pred start';}
+      return '<td class="sc '+cl+' '+c+'" data-k="'+esc(k)+'" data-d="'+d+'">'+t+'</td>';}).join('');
+    var pr=s.pr,st=s.st===9?'fin':s.os?'scab':'';
+    return '<tr'+(s.st===9?' class="finrow"':'')+'><td class="fn shf">'
+      +'<button class="pri '+(pr||'none')+'" '+(ro?'disabled':'onclick="cyclePrio('+jsq(k)+')"')+' title="priority — tap to change"></button>'
+      +'<div class="fnm"><span class="lnk2" onclick="openField('+jsq(k)+')">'+esc(f.field)+'</span><div class="sub">'+esc(s.c)+(s.sub?' · '+esc(subOf(f)):'')+'</div>'
+      +'<div class="muted" style="font-size:10.5px">'+esc(f.estate)+' · '+fmt(acres(f),0)+'ac'+(s.last?' · last '+dm(s.last):'')+'</div></div>'
+      +(ro?'':'<select class="stsel '+st+'" onchange="setState('+jsq(k)+',this.value)"><option value=""'+(st===''?' selected':'')+'>—</option><option value="scab"'+(st==='scab'?' selected':'')+'>Out of scab</option><option value="fin"'+(st==='fin'?' selected':'')+'>Finished</option></select>')
+      +'</td>'+cells+'</tr>';
+  }).join('');
+  var key='<div class="shkey small"><span class="sc pred">Pred start</span> predicted from warning days · <span class="sc plan">20</span> amount planned · <span class="sc miss">20</span> day gone, not started · <span class="sc done">22</span> applied by the team'
+    +(ro?'':' · tap a day to type an amount (empty = clear) · <b>Tab</b> moves right, <b>Enter</b> down')+'</div>';
+  return '<div class="card"><h3>Irrigation sheet <span class="muted small" style="font-weight:400">'+R.list.length+' fields · priority first</span><span class="sp"></span>'
+    +'<button class="btn o sm" onclick="S.gOff--;render()">◀ week</button><button class="btn o sm" onclick="S.gOff=0;render()">'+(ro?'As at':'Today')+'</button><button class="btn o sm" onclick="S.gOff++;render()">week ▶</button></h3>'
+    +key+'<div class="tw shw"><table class="sheet" onclick="sheetClick(event)"><thead><tr><th class="fn shf">Field</th>'+head+'</tr></thead><tbody>'
+    +(body||'<tr><td colspan="30" class="muted pad">No fields match.</td></tr>')+'</tbody></table></div></div>';
+}
+function cyclePrio(k){if(!canEdit())return;var f=BYKEY[k],r=rec(f),o=['','r','o','g'];r.pr=o[(o.indexOf(r.pr||'')+1)%4];if(!r.pr)delete r.pr;touch(f);}
+function setState(k,v){if(!canEdit())return;var f=BYKEY[k],r=rec(f);
+  if(v==='fin'){r.st=9;delete r.os;}else if(v==='scab'){if(r.st===9)r.st=0;r.os=1;}else{if(r.st===9)r.st=0;delete r.os;}touch(f);}
+function setPlan(k,d,v){var f=BYKEY[k],r=rec(f);r.g=(r.g||[]).filter(function(x){return x[0]!==d;});if(v>0)r.g.push([d,v]);markField(f);}
+function sheetClick(e){
+  var td=e.target.closest&&e.target.closest('td.sc');if(!td||td.querySelector('input'))return;
+  var k=td.dataset.k,d=td.dataset.d;
+  if(td.classList.contains('done')){openField(k);return;}
+  if(is26()){toast('2026 is the records season — read only');return;}
+  var cur=td.classList.contains('plan')||td.classList.contains('miss')?td.textContent:'';
+  td.innerHTML='<input class="cin" inputmode="decimal" value="'+esc(cur)+'">';var inp=td.firstChild;inp.focus();inp.select();
+  var done=false;
+  var commit=function(move){if(done)return;done=true;var v=inp.value.trim();
+    if(v!==cur){if(v===''){setPlan(k,d,0);}else if(+v>0){setPlan(k,d,+v);}else{toast('Type an amount in mm, or leave it empty to clear');}
+      persistShadow();schedSave();}
+    render();
+    if(move){var row=[...document.querySelectorAll('td.sc[data-k="'+CSS.escape(k)+'"]')],ci=row.findIndex(function(c){return c.dataset.d===d;});var nx=null;
+      if(move==='right')nx=row[ci+1];
+      else if(move==='down'){var all=[...document.querySelectorAll('td.sc[data-d="'+d+'"]')],ri=all.findIndex(function(c){return c.dataset.k===k;});nx=all[ri+1];}
+      if(nx)sheetClick({target:nx});}
+  };
+  inp.addEventListener('keydown',function(ev){if(ev.key==='Enter'){ev.preventDefault();commit('down');}else if(ev.key==='Tab'){ev.preventDefault();commit('right');}else if(ev.key==='Escape'){done=true;render();}});
+  inp.addEventListener('blur',function(){commit(null);});
+}
 function vPlanner(){
+  if(S.rec!=='list'){var R0=filtered();return recToggle()+chipsHtml(R0.all)+filtersHtml(R0.all)+vSheet();}
+  return recToggle()+vPlannerList();
+}
+function recToggle(){return '<div class="filters"><div class="seg2">'+[['sheet','Sheet'],['list','List & programme']].map(function(x){var on=(S.rec||'sheet')===x[0];return '<button class="'+(on?'on':'')+'" onclick="S.rec=\''+x[0]+'\';render()">'+x[1]+'</button>';}).join('')+'</div></div>';}
+function vPlannerList(){
   var R=filtered(),T=todayIso();
   var start=addDays(T,-5+S.gOff*7),days=[];for(var i=0;i<13;i++)days.push(addDays(start,i));
   var head=days.map(function(d){var wd=['Su','Mo','Tu','We','Th','Fr','Sa'][new Date(d+'T12:00:00').getDay()];
@@ -791,6 +900,7 @@ function vSettings(){
 function gapSet(k,v){if(v===''||v==null)delete cfg().gap[k];else cfg().gap[k]=+v;cfgTouch();}
 function useSuggest(){var g=cfg().gap,s=R26.gapSuggest,n=0;Object.keys(s).forEach(function(k){if(g[k]==null){g[k]=s[k];n++;}});toast(n+' warning-day lines filled');cfgTouch();}
 function fillSubs(){var c=document.getElementById('gCrop').value,names=Object.keys((window._subs||{})[c]||{});
+  names.unshift('Out of scab');   // warning days used while a field is marked Out of scab
   if(c==='Onions')['Brown Drilled','Red Drilled','Winter Sets','Spring Sets','Spring Sets Red','Red Sets','Speciality Alliums'].forEach(function(x){if(names.indexOf(x)<0)names.push(x);});
   document.getElementById('gSub').innerHTML='<option value="">variety / type…</option>'+names.sort().map(function(v){return '<option>'+esc(v)+'</option>';}).join('');}
 function gapAdd(){var c=document.getElementById('gCrop').value,s=document.getElementById('gSub').value,d=parseFloat(document.getElementById('gDays').value);
@@ -837,10 +947,10 @@ function openField(k){
      set  = {t:'set',m,k,run,s,f,spd,ang,mm,emp,pid,plan,end}  a machine started on a run (staff)
    The first run of a new cycle on a field creates the field's pass (date, told, applied)
    in the Records, so stage 3 feeds stage 1 automatically. ══════════════════ */
-function nowDT(){var d=new Date();return isoOf(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+function nowDT(){var d=new Date();return today()+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
 function addMin(dt,m){var d=new Date(dt);d.setMinutes(d.getMinutes()+Math.round(m));return isoOf(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
 function minsTo(a,b){return Math.round((new Date(b)-new Date(a))/60000);}
-function tShow(dt){if(!dt)return '';var d=dt.slice(0,10),T=isoOf(new Date());return (d===T?'':d===addDays(T,1)?'tmrw ':d===addDays(T,-1)?'yest ':dm(d)+' ')+dt.slice(11,16);}
+function tShow(dt){if(!dt)return '';var d=dt.slice(0,10),T=today();return (d===T?'':d===addDays(T,1)?'tmrw ':d===addDays(T,-1)?'yest ':dm(d)+' ')+dt.slice(11,16);}
 function durShow(m){if(m==null)return '';var neg=m<0;m=Math.abs(m);var h=Math.floor(m/60),mm=m%60;return (neg?'-':'')+(h?h+'h ':'')+pad(mm)+'m';}
 function ops(){return LOCAL.ops||(LOCAL.ops={});}
 function opList(t){var O=ops(),out=[];Object.keys(O).forEach(function(k){var o=O[k];if(o&&o.t===t&&!o.x)out.push(o);});return out;}
@@ -871,7 +981,7 @@ async function importAssets(inp){
     cfg().assets={t:Date.now(),src:'imported file '+f.name,list:list};cfgTouch();toast(list.length+' irrigators loaded from '+f.name);
   }catch(e){alert('Could not read that file: '+e.message);}
 }
-async function loadAssets(force){
+async function loadAssets(force){if(PREVIEW)return;
   var u=user();if(!u)return;
   try{var r=await fetch(RELAY+'assets?emp='+encodeURIComponent(u.emp)+(force?'&fresh=1':''));if(!r.ok){SRC.assets='shared asset list not linked to the relay yet';return;}
     var o=await r.json();if(o&&o.ok&&o.list&&o.list.length){ASSETS={t:Date.now(),src:'shared file (Checklist App)',list:o.list};SRC.assets='read '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
@@ -1012,7 +1122,7 @@ function startSet(o){
   if(fp.pid&&!fp.complete&&fp.runs.indexOf(+o.run)<0)pid=fp.pid;          // carries on the current cycle
   if(!pid){                                                                // first run of a new cycle = a new pass in the Records
     pid=newId();(r.p=r.p||[]).push([day,+o.told||+o.mm||0,+o.mm||0,u?u.emp:'',pid]);
-    r.g=(r.g||[]).filter(function(x){return x[0]!==day;});
+    r.g=(r.g||[]).filter(function(x){return x[0]>day;});
     if(+o.mm>MIN_MM&&(r.st===2||r.st===3))r.st=0;
     markField(f);
   }
@@ -1048,7 +1158,7 @@ function stFieldChange(keep){
   var k=document.getElementById('stK').value,info=document.getElementById('stInfo');if(!k){info.textContent='';return;}
   var fp=fieldProg(k),s=stat(BYKEY[k]),L=(cfg().runLen||{})[k];
   if(!keep||!document.getElementById('stR').value)document.getElementById('stR').value=nextRun(k);
-  if(!document.getElementById('stMm').value){var mm=s.mm2||'';s.g.forEach(function(x){if(x[0]===isoOf(new Date()))mm=x[1];});document.getElementById('stMm').value=mm||20;}
+  if(!document.getElementById('stMm').value){var mm=s.mm2||'';s.g.forEach(function(x){if(x[0]===today())mm=x[1];});document.getElementById('stMm').value=mm||20;}
   info.innerHTML=(fp.N?fp.N+' runs':'runs not set')+(L?' · run length '+L+'m':'')+(fp.pid&&!fp.complete?' · this cycle: runs '+fp.runs.join(', ')+' started':'')+' · '+badge(s);
   stCalc();
 }
@@ -1075,13 +1185,13 @@ function openPlan(o){
   var T=team(),staff=Object.keys(T).filter(function(e){return T[e].r==='staff'&&(!est||!T[e].est||!T[e].est.length||T[e].est.some(inE));});
   if(!staff.length)staff=Object.keys(T);
   var ms=o.m?machState(o.m):null,at=o.at||(ms&&ms.inAt&&ms.inAt>nowDT()?ms.inAt.slice(11,16):'18:00');
-  var k=o.k||'',mm=o.mm;if(k&&mm==null){var s=stat(BYKEY[k]);mm=s.mm2||'';s.g.forEach(function(x){if(x[0]>=isoOf(new Date())&&!mm)mm=x[1];});}
+  var k=o.k||'',mm=o.mm;if(k&&mm==null){var s=stat(BYKEY[k]);mm=s.mm2||'';s.g.forEach(function(x){if(x[0]>=today()&&!mm)mm=x[1];});}
   modal('<div style="display:flex;align-items:start"><h2 style="flex:1">'+(ex?'Edit move':'Plan a move')+'</h2><button class="x" style="font-size:20px;color:var(--tx3)" onclick="closeModal()">✕</button></div><div class="form">'
     +'<div><label>Machine</label><select id="plM" onchange="plMachChange()">'+machOptions(M,o.m,inE)+'</select></div>'
     +'<div><label>Move to field</label><select id="plK" onchange="plFieldChange()"><option value="">pick…</option>'+F.map(function(f){var kk=key(f),s=stat(f);return '<option value="'+esc(kk)+'"'+(kk===k?' selected':'')+'>'+esc(f.field)+' ('+s.lab.split(' —')[0]+')</option>';}).join('')+'</select></div>'
     +'<div class="row2"><div><label>Run</label><input id="plR" type="number" inputmode="numeric" value="'+(o.run||(k?nextRun(k):''))+'"></div><div><label>Runs in field</label><input id="plN" type="number" inputmode="numeric" value="'+(k&&runsOf(k)||'')+'" placeholder="?"></div></div>'
     +'<div class="row2"><div><label>Staff</label><select id="plE"><option value="">pick…</option>'+staff.map(function(e){return '<option value="'+esc(e)+'"'+(e===o.emp?' selected':'')+'>'+esc(nameOf(e))+'</option>';}).join('')+'</select></div><div><label>Move at</label><input id="plAt" type="time" value="'+esc(at)+'"></div></div>'
-    +'<div class="row2"><div><label>Amount (mm)</label><input id="plMm" type="number" inputmode="decimal" value="'+(mm||'')+'"></div><div><label>Date</label><input id="plD" type="date" value="'+(o.d||isoOf(new Date()))+'"></div></div>'
+    +'<div class="row2"><div><label>Amount (mm)</label><input id="plMm" type="number" inputmode="decimal" value="'+(mm||'')+'"></div><div><label>Date</label><input id="plD" type="date" value="'+(o.d||today())+'"></div></div>'
     +(staff.length?'':'<div class="small" style="color:var(--r2)">No staff set up yet — add them under Settings → Team.</div>')
     +'<div style="display:flex;gap:8px"><button class="btn" style="flex:1;padding:12px" onclick="plSave('+(ex?jsq(ex.id):'null')+')">'+(ex?'Save changes':'+ Add to tonight’s plan')+'</button>'+(ex?'<button class="btn r" onclick="delOp('+jsq(ex.id)+')">Delete</button>':'')+'</div></div>');
 }
@@ -1103,7 +1213,7 @@ function vSup(){
   if(is26())return '<div class="banner info">The supervisor page runs on the '+LIVE_YR+' season.</div>';
   var ests=estChoices();if(!S.supEst)S.supEst=myEsts()[0]||'ALL';
   var sel=S.supEst,inE=function(e){return sel==='ALL'||e===sel;};
-  var now=nowDT(),T=isoOf(new Date());
+  var now=nowDT(),T=today();
   var M=machines().filter(function(m){return inE(machEst(m));});
   var plans=opList('plan').filter(function(p){return !p.done&&p.d>=addDays(T,-1)&&inE(fEst(p.k)||machEst(mach(p.m)));}).sort(function(a,b){return (a.d+a.at)<(b.d+b.at)?-1:1;});
   var nextFor=function(mid){return plans.filter(function(p){return p.m===mid;})[0];};
@@ -1156,7 +1266,7 @@ function vSup(){
 function vStaff(){
   if(is26())return '<div class="banner info">The staff page runs on the '+LIVE_YR+' season.</div>';
   var u=user();if(!u)return '<div class="card"><div class="pad"><p>Sign in with your employee number to see your moves.</p><button class="btn" onclick="signIn()">Sign in</button></div></div>';
-  var T=isoOf(new Date()),now=nowDT();
+  var T=today(),now=nowDT();
   var who=S.staffAs||u.emp;
   var mine=opList('plan').filter(function(p){return p.emp===who&&!p.done&&p.d>=addDays(T,-1);}).sort(function(a,b){return (a.d+a.at)<(b.d+b.at)?-1:1;});
   var running=machines().map(function(m){return [m,machState(m.id)];}).filter(function(x){return x[1].cur&&x[1].cur.emp===who&&(x[1].running||x[1].inAt>addMin(now,-180));});
@@ -1232,10 +1342,12 @@ function render(){
   document.getElementById('who').textContent=u?u.name.split(' ')[0]:'Sign in';paintLive();
   document.getElementById('seasonSeg').innerHTML=[[LIVE_YR,LIVE_YR+' live'],['2026','2026 records']].map(function(x){return '<button class="'+(S.season===x[0]?'on':'')+'" onclick="setSeason(\''+x[0]+'\')">'+x[1]+'</button>';}).join('');
   var n=nPending(),b=document.getElementById('saveBtn');b.textContent=SAVING?'Saving…':n?(_saveErr?'Save ('+n+')':'Saving '+n+'…'):'Saved ✓';b.className='savebtn'+(n?' dirty':'');
+  if(PREVIEW)document.getElementById('pvbar').innerHTML='<div class="pvbar">PREVIEW — FieldPlan snapshot '+esc(SNAP.taken)+' + your 2026 records, “today” = '+dm(SNAP.today)+'/'+SNAP.today.slice(0,4)+'. Try anything: nothing here reaches the live app.</div>';
   var VV=myRole()==='staff'?VIEWS.filter(function(v){return v[0]==='staff'||v[0]==='agro';}):VIEWS;if(VV.every(function(v){return v[0]!==S.view;}))S.view=VV[0][0];
   document.getElementById('seasonSeg').style.display=myRole()==='staff'?'none':'';
   document.getElementById('nav').innerHTML=VV.map(function(v){return '<button class="'+(S.view===v[0]?'on':'')+'" onclick="go(\''+v[0]+'\')">'+v[1]+'</button>';}).join('');
   var top='';
+  if(PREVIEW)document.getElementById('seasonSeg').style.display='none';
   if(n&&_saveErr)top+='<div class="banner warn">⚠ <b>'+n+' change'+(n>1?'s':'')+' not saved yet</b> — '+esc(_saveErr)+'. They are kept on this device and will send automatically.</div>';
   if(is26())top+='<div class="banner info">Viewing the <b>2026 records</b> (read-only, from the spreadsheet) as at <input type="date" value="'+S.asAt+'" min="2026-03-23" max="2026-10-24" onchange="S.asAt=this.value;saveUi();render()" style="padding:2px 4px">. Statuses are worked out as if it were that day.</div>';
   if(!u)top+='<div class="banner warn">Not signed in — varieties/onion types from Omnia need sign-in, and so does saving. <span class="lnk" onclick="signIn()">Sign in</span></div>';
@@ -1247,6 +1359,7 @@ function render(){
 
 /* ── boot ──────────────────────────────────────────────────────────────── */
 async function loadFieldPlan(force){
+  if(PREVIEW){FP=SNAP.fp;buildFns();indexF();SRC.fp='preview snapshot of FieldPlan ('+SNAP.taken+')';return;}
   var cached=null;try{cached=JSON.parse(localStorage.getItem('irr_fp_cache')||'null');}catch(e){}
   if(cached&&!force&&!FP){FP=cached;buildFns();indexF();SRC.fp='cached copy '+new Date(cached.t).toLocaleString('en-GB');}
   try{
@@ -1257,7 +1370,7 @@ async function loadFieldPlan(force){
     try{localStorage.setItem('irr_fp_cache',JSON.stringify(FP));}catch(e){}
   }catch(e){if(!FP)throw e;SRC.fp+=' (live read failed: '+e.message+')';}
 }
-async function loadR26(){try{var r=await fetch((QS.get('r26')||RAW+'irr_2026.json')+'?t='+Math.floor(Date.now()/3600000));if(r.ok)R26=await r.json();}catch(e){}}
+async function loadR26(){if(PREVIEW){R26=SNAP.r26;return;}try{var r=await fetch((QS.get('r26')||RAW+'irr_2026.json')+'?t='+Math.floor(Date.now()/3600000));if(r.ok)R26=await r.json();}catch(e){}}
 async function refreshAll(force){
   await loadFieldPlan(force);
   try{var oc=JSON.parse(localStorage.getItem('irr_om_cache')||'null');if(oc&&!OMT){Object.assign(OMV,oc.v);SRC.om='last copy '+new Date(oc.t).toLocaleString('en-GB');}}catch(e){}
@@ -1279,7 +1392,7 @@ async function refreshAll(force){
   }
 })();
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&LOCAL){pull();if(nPending())save(true);}});
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('irr-sw.js').catch(function(){});
+try{if(!PREVIEW&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('irr-sw.js').catch(function(){});}catch(e){}
 window.addEventListener('beforeunload',function(e){if(nPending()){e.preventDefault();e.returnValue='';}});
 </script>
 </body>
