@@ -145,6 +145,7 @@ td.shf .lnk2{font-size:13px}
 td.shf .fnm{flex:1;min-width:0}
 .lnk2{color:var(--g1);cursor:pointer;font-weight:600}
 .pri{width:22px;height:22px;border-radius:5px;border:2px solid var(--bd2);cursor:pointer;flex:none;padding:0}
+.pri.mini{width:14px;height:14px;border-width:2px;cursor:default;display:inline-block;vertical-align:-2px;margin-right:6px}
 .pri.r{background:var(--r1);border-color:var(--r1)}.pri.o{background:var(--r2);border-color:var(--r2)}.pri.g{background:var(--pri);border-color:var(--pri)}.pri.none{background:#fff}
 .stsel{font-size:11px;padding:3px;border:1px solid var(--bd2);border-radius:5px;max-width:92px;background:#fff}
 .stsel.fin{background:#eceef3;color:#5a6680;font-weight:600}.stsel.scab{background:#fdf3d8;color:#6b4e00;font-weight:600}
@@ -197,7 +198,7 @@ table.sheet th.tday{background:#fdf1e2;color:var(--tx)}
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   ABREYS IRRIGATION — v1.1 Records sheet (11/11/26) — irrigation.abreys.app
+   ABREYS IRRIGATION — v1.3 (12/11/26): priority red→orange→green→none, sheet only re-sorts on the Sort button, Supervisor lists above Machines — irrigation.abreys.app
    Masters (re-read every load, never copied): FieldPlan.html (fields, estates,
    zones, cropping, water rates, isOurs/zone rules) and Omnia via the relay
    (varieties, onion types, working areas, field names).
@@ -618,10 +619,13 @@ function filtered(){
     var s=stat(f); if(S.st&&String(s.code)!==S.st)return;
     list.push(f);stats.push(s);});
   var idx=list.map(function(_,i){return i;}),sk=S.sortK,sd=S.sortD;
+  // The sheet keeps its row order until you press "Sort" (or change the sort menu) — rows never move while you work.
+  var SH=S.view==='plan'&&(S.rec||'sheet')==='sheet', H=SH?window._shOrd:null;
   idx.sort(function(a,b){
+    if(H){var ha=H[key(list[a])],hb=H[key(list[b])];ha=ha==null?1e9:ha;hb=hb==null?1e9:hb;if(ha!==hb)return ha-hb;}
     var fa=list[a],fb=list[b],sa=stats[a],sb=stats[b],va,vb;
     if(!sk){
-      if(S.view==='plan'){var PR={r:0,o:1,g:2},pa=PR[sa.pr]!=null?PR[sa.pr]:3,pb=PR[sb.pr]!=null?PR[sb.pr]:3;if(pa!==pb)return pa-pb;}
+      if(S.view==='plan'){var pa=prRank(sa.pr),pb=prRank(sb.pr);if(pa!==pb)return pa-pb;}
       if(S.view==='agro'){va=sa.days==null?-1:sa.days;vb=sb.days==null?-1:sb.days;if(va!==vb)return vb-va;}
       else{var d=ORD[sa.code]-ORD[sb.code];if(d)return d;
         if(sa.code===1)return (sb.days-sb.gap)-(sa.days-sa.gap);
@@ -633,7 +637,7 @@ function filtered(){
     else if(sk==='crop'){va=sa.c+'|'+sa.sub;vb=sb.c+'|'+sb.sub;}
     else if(sk==='variety'){va=sa.sub||'~';vb=sb.sub||'~';}
     else if(sk==='acres'){va=fa.ha;vb=fb.ha;}
-    else if(sk==='prio'){var PQ={r:0,o:1,g:2};va=PQ[sa.pr]!=null?PQ[sa.pr]:3;vb=PQ[sb.pr]!=null?PQ[sb.pr]:3;}
+    else if(sk==='prio'){va=prRank(sa.pr);vb=prRank(sb.pr);}
     else if(sk==='last'){va=sa.last||'';vb=sb.last||'';}
     else if(sk==='days'){va=sa.days==null?-1:sa.days;vb=sb.days==null?-1:sb.days;}
     else if(sk==='applied'){va=sa.perAc;vb=sb.perAc;}
@@ -641,8 +645,10 @@ function filtered(){
     else if(sk==='left'){var ra=rate(fa),rb=rate(fb);va=ra==null?99:ra-sa.perAc;vb=rb==null?99:rb-sb.perAc;}
     else{va=ORD[sa.code];vb=ORD[sb.code];}
     if(va<vb)return -sd;if(va>vb)return sd;return fa.field<fb.field?-1:1;});
+  if(SH&&!H){window._shOrd={};idx.forEach(function(i,n){window._shOrd[key(list[i])]=n;});window._shDirty=0;}
   return {all:all,list:idx.map(function(i){return list[i];}),stats:idx.map(function(i){return stats[i];})};
 }
+function prRank(pr){return pr==='r'?0:pr==='o'?1:pr==='g'?2:3;}  // red, orange, green, then fields with no colour at the bottom
 function sortBy(k){if(S.sortK===k)S.sortD=-S.sortD;else{S.sortK=k;S.sortD=1;}render();}
 function th(lab,k,cls){var ar=S.sortK===k?(S.sortD>0?' ▲':' ▼'):'';return '<th class="s '+(cls||'')+'" onclick="sortBy(\''+k+'\')">'+lab+ar+'</th>';}
 function setF(k,v){S[k]=v;if(k==='est')S.area='';saveUi();render();}
@@ -692,12 +698,17 @@ function vSheet(){
   }).join('');
   var key='<div class="shkey small"><span class="sc pred">Pred start</span> predicted from warning days · <span class="sc plan">20</span> amount planned · <span class="sc miss">20</span> day gone, not started · <span class="sc done">22</span> applied by the team'
     +(ro?'':' · tap a day to type an amount (empty = clear) · <b>Tab</b> moves right, <b>Enter</b> down')+'</div>';
-  return '<div class="card"><h3>Irrigation sheet <span class="muted small" style="font-weight:400">'+R.list.length+' fields · priority first</span><span class="sp"></span>'
+  return '<div class="card"><h3>Irrigation sheet <span class="muted small" style="font-weight:400">'+R.list.length+' fields</span>'
+    +'<button class="btn sm'+(window._shDirty?'':' o')+'" onclick="resortSheet()" title="put the fields in order now">↕ Sort'+(window._shDirty?' (colours changed)':'')+'</button>'
+    +'<select onchange="S.sortK=this.value;S.sortD=1;resortSheet()" style="padding:5px 8px;border:1px solid var(--bd2);border-radius:6px;font-size:12.5px" title="sort the fields">'
+    +[['','Order: priority (red → orange → green → none)'],['field','Order: field name'],['estate','Order: estate'],['status','Order: status (due first)'],['last','Order: last watered']].map(function(o){return '<option value="'+o[0]+'"'+((S.sortK||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>'
+    +'<span class="sp"></span>'
     +'<button class="btn o sm" onclick="S.gOff--;render()">◀ week</button><button class="btn o sm" onclick="S.gOff=0;render()">'+(ro?'As at':'Today')+'</button><button class="btn o sm" onclick="S.gOff++;render()">week ▶</button></h3>'
     +key+'<div class="tw shw"><table class="sheet" onclick="sheetClick(event)"><thead><tr><th class="fn shf">Field</th>'+head+'</tr></thead><tbody>'
     +(body||'<tr><td colspan="30" class="muted pad">No fields match.</td></tr>')+'</tbody></table></div></div>';
 }
-function cyclePrio(k){if(!canEdit())return;var f=BYKEY[k],r=rec(f),o=['','r','o','g'];r.pr=o[(o.indexOf(r.pr||'')+1)%4];if(!r.pr)delete r.pr;touch(f);}
+function resortSheet(){window._shOrd=null;render();}
+function cyclePrio(k){if(!canEdit())return;window._shDirty=1;var f=BYKEY[k],r=rec(f),o=['','r','o','g'];r.pr=o[(o.indexOf(r.pr||'')+1)%4];if(!r.pr)delete r.pr;touch(f);}
 function setState(k,v){if(!canEdit())return;var f=BYKEY[k],r=rec(f);
   if(v==='fin'){r.st=9;delete r.os;}else if(v==='scab'){if(r.st===9)r.st=0;r.os=1;}else{if(r.st===9)r.st=0;delete r.os;}touch(f);}
 function setPlan(k,d,v){var f=BYKEY[k],r=rec(f);r.g=(r.g||[]).filter(function(x){return x[0]!==d;});if(v>0)r.g.push([d,v]);markField(f);}
@@ -1234,14 +1245,16 @@ function vSup(){
   Fl.forEach(function(f){var k=key(f),fp=fieldProg(k),s=stat(f);
     if(fp.pid&&!fp.complete)prog.push([f,fp,s]);
     else if((s.code===1||s.code===2||s.code===3)&&!plans.some(function(p){return p.k===k;}))todo.push([f,fp,s]);});
-  todo.sort(function(a,b){return ORD[a[2].code]-ORD[b[2].code];});
+  todo.sort(function(a,b){return (prRank(a[2].pr)-prRank(b[2].pr))||(ORD[a[2].code]-ORD[b[2].code])||(a[0].field<b[0].field?-1:1);});   // Matthew's priority first
+  prog.sort(function(a,b){return (prRank(a[2].pr)-prRank(b[2].pr))||(a[0].field<b[0].field?-1:1);});
+  var mini=function(s){return s.pr?'<span class="pri mini '+s.pr+'" title="priority set in the Records"></span>':'';};
   var prows=prog.map(function(x){var f=x[0],fp=x[1],k=key(f),pct=fp.N?Math.round(fp.done/fp.N*100):0;
-    return '<tr><td class="fn" onclick="openField('+jsq(k)+')">'+esc(f.field)+'<div class="sub">'+esc(crop(f))+'</div></td>'
+    return '<tr><td class="fn" onclick="openField('+jsq(k)+')">'+mini(x[2])+esc(f.field)+'<div class="sub">'+esc(crop(f))+'</div></td>'
       +'<td><div class="bar" style="width:110px"><i style="width:'+pct+'%"></i></div><span class="small">'+fp.done+' of '+(fp.N||'?')+' runs done · '+fp.running.length+' running</span></td>'
       +'<td class="n small">'+tShow(fp.start)+'</td><td class="n"><b>'+(fp.N?tShow(fp.est):'<span class="muted small">set runs</span>')+'</b></td>'
       +'<td><button class="btn o sm" onclick="openPlan({k:'+jsq(k)+'})">+ plan next run</button></td></tr>';}).join('');
   var trows=todo.map(function(x){var f=x[0],s=x[2],k=key(f);
-    return '<tr><td class="fn" onclick="openField('+jsq(k)+')">'+esc(f.field)+'<div class="sub">'+esc(crop(f))+(s.sub?' · '+esc(s.sub):'')+'</div></td><td>'+badge(s)+'</td>'
+    return '<tr><td class="fn" onclick="openField('+jsq(k)+')">'+mini(s)+esc(f.field)+'<div class="sub">'+esc(crop(f))+(s.sub?' · '+esc(s.sub):'')+'</div></td><td>'+badge(s)+'</td>'
       +'<td class="n">'+fmt(acres(f),1)+' ac</td><td class="n small">'+(runsOf(k)?runsOf(k)+' runs':'<span class="muted">runs?</span>')+'</td>'
       +'<td><button class="btn sm" onclick="openPlan({k:'+jsq(k)+'})">+ plan</button></td></tr>';}).join('');
   var byStaff={};plans.forEach(function(p){(byStaff[p.emp||'']=byStaff[p.emp||'']||[]).push(p);});
@@ -1256,10 +1269,10 @@ function vSup(){
     +'<div class="kpi"><div class="l">Moves planned</div><div class="v">'+plans.length+'</div><div class="s">'+Object.keys(byStaff).length+' staff</div></div>'
     +'<div class="kpi"><div class="l">To start</div><div class="v">'+todo.length+'</div><div class="s">due / definitely / programmed</div></div></div>'
     +(M.length?'':'<div class="banner warn">No machines set up'+(sel!=='ALL'?' for '+esc(sel):'')+' yet — add them under <span class="lnk" onclick="go(\'set\')">Settings → Machines</span>.</div>')
-    +'<div class="card"><h3>Machines</h3><div class="tw"><table><thead><tr><th class="fn">Machine</th><th>On</th><th class="n">Started</th><th class="n">Finishes</th><th class="hide-m">Speed / angle</th><th>By</th><th>Next move</th><th></th></tr></thead><tbody>'+(mrows||'<tr><td colspan="8" class="muted pad">—</td></tr>')+'</tbody></table></div></div>'
     +'<div class="card"><h3>Tonight’s moves <span class="muted small" style="font-weight:400">in time order — staff see these on their page</span></h3><div class="tw"><table><thead><tr><th class="n">Time</th><th>Staff</th><th>Machine</th><th>From</th><th>To</th><th></th></tr></thead><tbody>'+(plrows||'<tr><td colspan="6" class="muted pad">No moves planned.</td></tr>')+'</tbody></table></div></div>'
     +'<div class="card"><h3>Fields in progress</h3><div class="tw"><table><thead><tr><th class="fn">Field</th><th>Progress</th><th class="n">Started</th><th class="n">Field finishes ~</th><th></th></tr></thead><tbody>'+(prows||'<tr><td colspan="5" class="muted pad">Nothing part-way through.</td></tr>')+'</tbody></table></div></div>'
-    +'<div class="card"><h3>To start — from the Records <span class="muted small" style="font-weight:400">due (1), definitely start (2) and programmed (3), not yet planned</span></h3><div class="tw"><table><thead><tr><th class="fn">Field</th><th>Status</th><th class="n">Area</th><th class="n">Runs</th><th></th></tr></thead><tbody>'+(trows||'<tr><td colspan="5" class="muted pad">Nothing waiting.</td></tr>')+'</tbody></table></div></div>';
+    +'<div class="card"><h3>To start — from the Records <span class="muted small" style="font-weight:400">due (1), definitely start (2) and programmed (3), not yet planned · priority first</span></h3><div class="tw"><table><thead><tr><th class="fn">Field</th><th>Status</th><th class="n">Area</th><th class="n">Runs</th><th></th></tr></thead><tbody>'+(trows||'<tr><td colspan="5" class="muted pad">Nothing waiting.</td></tr>')+'</tbody></table></div></div>'
+    +'<div class="card"><h3>Machines</h3><div class="tw"><table><thead><tr><th class="fn">Machine</th><th>On</th><th class="n">Started</th><th class="n">Finishes</th><th class="hide-m">Speed / angle</th><th>By</th><th>Next move</th><th></th></tr></thead><tbody>'+(mrows||'<tr><td colspan="8" class="muted pad">—</td></tr>')+'</tbody></table></div></div>';
 }
 
 /* ── STAGE 3: staff page ──────────────────────────────────────────────── */
