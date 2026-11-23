@@ -145,6 +145,9 @@ td.shf .lnk2{font-size:13px}
 td.shf .fnm{flex:1;min-width:0}
 .lnk2{color:var(--g1);cursor:pointer;font-weight:600}
 .pri{width:22px;height:22px;border-radius:5px;border:2px solid var(--bd2);cursor:pointer;flex:none;padding:0}
+.rmchip{display:inline-block;padding:1px 7px;border-radius:5px;background:#f1eee6;color:var(--tx2);font-weight:600;font-size:12px;margin:1px 0}
+.rmchip.done{background:#e3e3e3;color:#999;text-decoration:line-through}.rmchip.run{background:#1e88e5;color:#fff}.rmchip.hi{background:#ff6d00;color:#fff}.rmchip.nx{background:#ffd600;color:#3e2b00}
+.rmlab{background:rgba(0,0,0,.72);color:#fff;font:700 12px/1 var(--sans);padding:3px 5px;border-radius:4px;white-space:nowrap;transform:translate(-50%,-50%);display:inline-block}.rmlab.hi{background:#ff6d00}.rmlab.nx{background:#ffd600;color:#222}
 .pri.mini{width:14px;height:14px;border-width:2px;cursor:default;display:inline-block;vertical-align:-2px;margin-right:6px}
 .pri.r{background:var(--r1);border-color:var(--r1)}.pri.o{background:var(--r2);border-color:var(--r2)}.pri.g{background:var(--pri);border-color:var(--pri)}.pri.none{background:#fff}
 .stsel{font-size:11px;padding:3px;border:1px solid var(--bd2);border-radius:5px;max-width:92px;background:#fff}
@@ -198,7 +201,7 @@ table.sheet th.tday{background:#fdf1e2;color:var(--tx)}
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   ABREYS IRRIGATION — v1.3 (12/11/26): priority red→orange→green→none, sheet only re-sorts on the Sort button, Supervisor lists above Machines — irrigation.abreys.app
+   ABREYS IRRIGATION — v1.5 (23/11/26): own irrigation-relay (fieldplan-relay = Omnia + fallback); v1.4 run maps (Admin upload → map + next run for staff and supervisors); v1.3 priority sort on the Sort button — irrigation.abreys.app
    Masters (re-read every load, never copied): FieldPlan.html (fields, estates,
    zones, cropping, water rates, isOurs/zone rules) and Omnia via the relay
    (varieties, onion types, working areas, field names).
@@ -209,6 +212,23 @@ table.sheet th.tday{background:#fdf1e2;color:var(--tx)}
    ═══════════════════════════════════════════════════════════════════════════ */
 var RELAY=new URLSearchParams(location.search).get('relay')||'https://fieldplan-relay.matt-6c6.workers.dev/';  // ?relay= only for testing
 var RAW='https://raw.githubusercontent.com/matthewabrey/Abrey-Cropping/main/';
+/* The irrigation app's OWN relay (irrigation-relay) — records, moves, settings, run maps, asset list.
+   fieldplan-relay (RELAY) is only used for Omnia, and as a fallback if irrigation-relay isn't answering,
+   so changes made to fieldplan-relay by other apps can't break irrigation. */
+var IRR_RELAY=new URLSearchParams(location.search).get('irelay')||'https://irrigation-relay.matt-6c6.workers.dev/';
+var IRR_OK=null,IRR_WHY='';   // null = not tried yet · true = own relay working · false = falling back to fieldplan-relay
+async function irrFetch(path,opt){
+  if(IRR_OK!==false){
+    try{var r=await fetch(IRR_RELAY+path,opt);
+      if(r.status!==404&&r.status!==500){IRR_OK=true;return r;}
+      var t=await r.clone().text(),j=null;try{j=JSON.parse(t);}catch(e){}
+      if(j&&j.error&&!/no such route|GH_TOKEN/i.test(j.error)){IRR_OK=true;return r;}   // a real answer (e.g. asset list not set)
+      IRR_WHY=j&&j.error?j.error:'irrigation-relay not found ('+r.status+')';
+    }catch(e){if(!navigator.onLine)throw e;IRR_WHY='irrigation-relay not reachable';}
+    IRR_OK=false;
+  }
+  return fetch(RELAY+path,opt);
+}
 var QS=new URLSearchParams(location.search);
 var FP_URL=QS.get('fp')||(RAW+'FieldPlan.html');
 var LIVE_YR='2027';            // current season = harvest 2027
@@ -508,7 +528,7 @@ function rebase(prev){
 async function fetchServer(){
   if(PREVIEW){if(window._pvLoaded)return null;window._pvLoaded=1;SRC.data='preview snapshot';LIVE_OK=Date.now();return clone(SNAP.data);}
   var u=user(),j=null;
-  try{var r=await fetch(RELAY+'irr-data?emp='+encodeURIComponent(u?u.emp:''),{cache:'no-store'});
+  try{var r=await irrFetch('irr-data?emp='+encodeURIComponent(u?u.emp:''),{cache:'no-store'});
     if(r.ok){var o=await r.json();if(o&&o.ok){j=o.data||emptyData();SRC.data='saved data (live)';SRC.relay=true;LIVE_OK=Date.now();window._lastPull=Date.now();}}}catch(e){}
   if(!j){try{var r2=await fetch(RAW_DATA+'?t='+Date.now());if(r2.ok){j=await r2.json();SRC.data='saved data (published copy, may lag ~5 min)';}}catch(e){}}
   return j;
@@ -526,7 +546,7 @@ async function loadData(){
 async function pull(){ // pick up everyone else's changes
   if(SAVING||!LOCAL)return;window._lastPull=Date.now();
   var u=user(),j=null;
-  try{var r=await fetch(RELAY+'irr-data?emp='+encodeURIComponent(u?u.emp:'')+'&since='+encodeURIComponent(SERVER&&SERVER.updated||''),{cache:'no-store'});
+  try{var r=await irrFetch('irr-data?emp='+encodeURIComponent(u?u.emp:'')+'&since='+encodeURIComponent(SERVER&&SERVER.updated||''),{cache:'no-store'});
     if(r.ok){var o=await r.json();if(o&&o.ok){LIVE_OK=Date.now();if(o.same){paintLive();return;}j=o.data;}}}catch(e){}
   if(!j){paintLive();return;}
   if(SAVING)return;SERVER=normData(j);rebase(LOCAL);softRender();
@@ -549,7 +569,7 @@ async function save(auto){
   Object.keys(sent.o).forEach(function(k){body.ops[k]=LOCAL.ops[k]||null;});
   SAVING=true;render();
   try{
-    var res=await fetch(RELAY+'irr-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var res=await irrFetch('irr-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     var out={};try{out=await res.json();}catch(e){}
     if(res.status===403)throw new Error(out.error||'your employee number isn’t set up to record irrigation — ask Matthew to add you under Settings → Team');
     if(res.status===404||(!res.ok&&!out.error))throw new Error('the relay has no irrigation route yet — entries are kept on this device');
@@ -944,7 +964,7 @@ function openField(k){
       +(s.st===2?'<input type="number" value="'+(s.mm2||'')+'" placeholder="mm" onchange="setMm2('+jsq(k)+',this.value)" style="width:64px;padding:6px;border:1px solid var(--r2);border-radius:6px"> <span class="small muted">mm to put on</span>':'')+'</div>'
       +(prog?'<div class="small" style="margin-bottom:10px">Programmed: '+prog+'</div>':''))
     +'<div style="font-weight:600;color:var(--g1);margin:6px 0">Passes</div><div class="plist">'+pl+'</div>'
-    +(is26()?'':'<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="closeModal();openPlan({k:'+jsq(k)+'})">+ Plan a move here</button><button class="btn o sm" onclick="window._logKey='+jsq(k)+';closeModal();go(\'log\')">Open in quick log</button><button class="btn r sm" onclick="if(confirm(\'Hide this field from the irrigation list?\'))hideField('+jsq(k)+')">Hide from list</button></div>'));
+    +(is26()?'':(rmField(k)?'<div class="small" style="margin-top:10px"><b>Run order:</b> '+esc(rmOrderTxt(k))+(rmField(k).dur.length?' · ⏱ '+esc(rmField(k).dur.join(' / ')):'')+'</div>':'')+'<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">'+mapBtn(k,'','Run map')+'<button class="btn sm" onclick="closeModal();openPlan({k:'+jsq(k)+'})">+ Plan a move here</button><button class="btn o sm" onclick="window._logKey='+jsq(k)+';closeModal();go(\'log\')">Open in quick log</button><button class="btn r sm" onclick="if(confirm(\'Hide this field from the irrigation list?\'))hideField('+jsq(k)+')">Hide from list</button></div>'));
 }
 
 /* ═══ OPERATIONS — the three stages ═══════════════════════════════════════
@@ -994,7 +1014,7 @@ async function importAssets(inp){
 }
 async function loadAssets(force){if(PREVIEW)return;
   var u=user();if(!u)return;
-  try{var r=await fetch(RELAY+'assets?emp='+encodeURIComponent(u.emp)+(force?'&fresh=1':''));if(!r.ok){SRC.assets='shared asset list not linked to the relay yet';return;}
+  try{var r=await irrFetch('assets?emp='+encodeURIComponent(u.emp)+(force?'&fresh=1':''));if(!r.ok){SRC.assets='shared asset list not linked to the relay yet';return;}
     var o=await r.json();if(o&&o.ok&&o.list&&o.list.length){ASSETS={t:Date.now(),src:'shared file (Checklist App)',list:o.list};SRC.assets='read '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       try{localStorage.setItem('irr_assets',JSON.stringify(ASSETS));}catch(e){}if(LOCAL)softRender();}
     else SRC.assets=(o&&o.error)||'shared asset list not available';
@@ -1082,7 +1102,7 @@ function assetIrrigators(rows) {
 }
 
 function mach(id){return machines().filter(function(m){return m.id===id;})[0]||null;}
-function runsOf(k){var r=cfg().runs||{};return r[k]?+r[k]:null;}
+function runsOf(k){var r=cfg().runs||{};if(r[k])return +r[k];var n=RUNMAP?rmRunIds(k).length:0;return n||null;}
 function team(){return cfg().team||(cfg().team={});}
 function myRole(){var u=user();if(!u)return '';var t=team()[u.emp];return t?t.r:(u.role==='admin'?'mgr':'');}
 function myEsts(){var u=user(),t=u&&team()[u.emp];return t&&t.est&&t.est.length?t.est:[];}
@@ -1103,7 +1123,7 @@ function fieldProg(k){
   var N=runsOf(k),ss=opList('set').filter(function(s){return s.k===k;}).sort(function(a,b){return a.s<b.s?-1:1;});
   if(!ss.length)return {N:N,runs:[],pid:null,sets:[],running:[],done:0,complete:false};
   var pid=ss[ss.length-1].pid,cs=ss.filter(function(s){return s.pid===pid;}),now=nowDT(),runs=[],done={};
-  cs.forEach(function(s){if(runs.indexOf(s.run)<0)runs.push(s.run);if(s.end||(s.f&&s.f<=now))done[s.run]=1;});
+  cs.forEach(function(s){var r0=rid(s.run);if(runs.indexOf(r0)<0)runs.push(r0);if(s.end||(s.f&&s.f<=now))done[r0]=1;});
   var running=cs.filter(function(s){var ms=machState(s.m);return ms.cur&&ms.cur.id===s.id&&ms.running;});
   var durs=cs.map(function(s){var e=s.end||s.f;return e?minsTo(s.s,e):0;}).filter(function(x){return x>0;});
   var avg=durs.length?durs.reduce(function(a,b){return a+b;},0)/durs.length:null;
@@ -1113,7 +1133,7 @@ function fieldProg(k){
   var est=lastF?(remaining&&avg?addMin(lastF,remaining*avg/par):lastF):null;
   return {N:N,runs:runs,pid:pid,sets:cs,running:running,done:Object.keys(done).length,complete:!!(N&&runs.length>=N&&!running.length),est:est,avg:avg,start:cs[0].s};
 }
-function nextRun(k){var fp=fieldProg(k),N=fp.N;if(!fp.pid||fp.complete)return 1;for(var r=1;r<=(N||99);r++)if(fp.runs.indexOf(r)<0)return r;return 1;}
+function nextRun(k,withPlans){var m=rmNextRun(k,withPlans);if(m)return m;var taken=rmTaken(k,withPlans),N=runsOf(k);for(var r=1;r<=(N||99);r++)if(taken.indexOf(String(r))<0)return String(r);return '1';}
 function progHtml(k,compact){
   var fp=fieldProg(k);if(!fp.pid)return '';
   if(fp.complete&&!compact)return '<span class="small muted">last cycle done '+tShow(fp.est)+'</span>';
@@ -1130,7 +1150,7 @@ function startSet(o){
   var f=BYKEY[o.k];if(!f){toast('Pick a field');return false;}
   if(!o.m){toast('Pick a machine');return false;}if(!o.f){toast('Enter the finish time');return false;}
   var u=user(),r=rec(f),s=o.s||nowDT(),day=s.slice(0,10),fp=fieldProg(o.k),pid=null;
-  if(fp.pid&&!fp.complete&&fp.runs.indexOf(+o.run)<0)pid=fp.pid;          // carries on the current cycle
+  if(fp.pid&&!fp.complete&&fp.runs.indexOf(rid(o.run))<0)pid=fp.pid;          // carries on the current cycle
   if(!pid){                                                                // first run of a new cycle = a new pass in the Records
     pid=newId();(r.p=r.p||[]).push([day,+o.told||+o.mm||0,+o.mm||0,u?u.emp:'',pid]);
     r.g=(r.g||[]).filter(function(x){return x[0]>day;});
@@ -1138,7 +1158,7 @@ function startSet(o){
     markField(f);
   }
   var ms=machState(o.m);if(ms.cur&&!ms.cur.end&&(!ms.cur.f||ms.cur.f>s)){ms.cur.end=s;opPut(ms.cur);} // machine moved off its last run early
-  opPut({id:newId(),t:'set',m:o.m,k:o.k,run:+o.run||1,s:s,f:o.f,spd:o.spd||'',ang:o.ang||'',mm:+o.mm||0,emp:o.emp||(u?u.emp:''),by:u?u.emp:'',pid:pid,plan:o.plan||''});
+  opPut({id:newId(),t:'set',m:o.m,k:o.k,run:rid(o.run)||'1',s:s,f:o.f,spd:o.spd||'',ang:o.ang||'',mm:+o.mm||0,emp:o.emp||(u?u.emp:''),by:u?u.emp:'',pid:pid,plan:o.plan||''});
   if(o.plan){var pl=ops()[o.plan];if(pl){pl.done=1;opPut(pl);}}
   opsCommit();toast('Started '+((mach(o.m)||{}).n||'machine')+' on '+f.field+' run '+(o.run||1));return true;
 }
@@ -1158,7 +1178,7 @@ function openStart(planId,machId){
     +'<div class="form">'
     +'<div><label>Machine</label><select id="stM">'+machOptions(M,mid,inMine)+'</select></div>'
     +'<div><label>Field</label><select id="stK" onchange="stFieldChange()"><option value="">pick…</option>'+F.map(function(f){var kk=key(f);return '<option value="'+esc(kk)+'"'+(kk===k?' selected':'')+'>'+esc(f.field)+' — '+esc(f.estate)+'</option>';}).join('')+'</select></div>'
-    +'<div class="row2"><div><label>Run</label><input id="stR" type="number" inputmode="numeric" value="'+(run||'')+'" oninput="stCalc()"></div><div><label>Started at</label><input id="stS" type="time" value="'+nt+'" oninput="stCalc()"></div></div>'
+    +'<div class="row2"><div><label>Run</label><input id="stR" inputmode="decimal" autocomplete="off" value="'+esc(run||'')+'" oninput="stCalc();stNextShow()"></div><div><label>Started at</label><input id="stS" type="time" value="'+nt+'" oninput="stCalc()"></div></div>'
     +'<div class="row2"><div><label>Speed (m/h)</label><input id="stSp" type="number" inputmode="decimal" oninput="stCalc()"></div><div><label>Gun angle (°)</label><input id="stA" type="number" inputmode="numeric"></div></div>'
     +'<div class="row2"><div><label>Finish time</label><input id="stF" type="time"></div><div><label>Amount (mm)</label><input id="stMm" type="number" inputmode="decimal" value="'+(mm||'')+'"></div></div>'
     +'<div id="stInfo" class="small muted"></div>'
@@ -1170,9 +1190,12 @@ function stFieldChange(keep){
   var fp=fieldProg(k),s=stat(BYKEY[k]),L=(cfg().runLen||{})[k];
   if(!keep||!document.getElementById('stR').value)document.getElementById('stR').value=nextRun(k);
   if(!document.getElementById('stMm').value){var mm=s.mm2||'';s.g.forEach(function(x){if(x[0]===today())mm=x[1];});document.getElementById('stMm').value=mm||20;}
-  info.innerHTML=(fp.N?fp.N+' runs':'runs not set')+(L?' · run length '+L+'m':'')+(fp.pid&&!fp.complete?' · this cycle: runs '+fp.runs.join(', ')+' started':'')+' · '+badge(s);
+  info.innerHTML=(fp.N?fp.N+' runs':'runs not set')+(L?' · run length '+L+'m':'')+(fp.pid&&!fp.complete?' · this round: runs '+fp.runs.join(', ')+' started':'')+' · '+badge(s)
+    +(rmField(k)?'<div style="margin-top:6px">Order: '+esc(rmOrderTxt(k))+'</div><div style="margin-top:6px"><button class="btn o sm" type="button" onclick="openMap(document.getElementById(\'stK\').value,document.getElementById(\'stR\').value)">🗺 Map of this run</button> <span id="stNext" style="font-weight:600;color:var(--g1)"></span></div>':'');
+  stNextShow();
   stCalc();
 }
+function stNextShow(){var k=(document.getElementById('stK')||{}).value,el=document.getElementById('stNext');if(el&&k)el.textContent=rmAfterTxt(k,document.getElementById('stR').value);}
 function stStartDT(){var t=document.getElementById('stS').value||'00:00',d=new Date();var dt=isoOf(d)+'T'+t;if(dt>addMin(nowDT(),60))dt=addDays(isoOf(d),-1)+'T'+t;return dt;}
 function stCalc(){ // finish = start + run length ÷ speed, when the run length is known
   var k=(document.getElementById('stK')||{}).value,L=k&&(cfg().runLen||{})[k],sp=parseFloat((document.getElementById('stSp')||{}).value);
@@ -1200,21 +1223,21 @@ function openPlan(o){
   modal('<div style="display:flex;align-items:start"><h2 style="flex:1">'+(ex?'Edit move':'Plan a move')+'</h2><button class="x" style="font-size:20px;color:var(--tx3)" onclick="closeModal()">✕</button></div><div class="form">'
     +'<div><label>Machine</label><select id="plM" onchange="plMachChange()">'+machOptions(M,o.m,inE)+'</select></div>'
     +'<div><label>Move to field</label><select id="plK" onchange="plFieldChange()"><option value="">pick…</option>'+F.map(function(f){var kk=key(f),s=stat(f);return '<option value="'+esc(kk)+'"'+(kk===k?' selected':'')+'>'+esc(f.field)+' ('+s.lab.split(' —')[0]+')</option>';}).join('')+'</select></div>'
-    +'<div class="row2"><div><label>Run</label><input id="plR" type="number" inputmode="numeric" value="'+(o.run||(k?nextRun(k):''))+'"></div><div><label>Runs in field</label><input id="plN" type="number" inputmode="numeric" value="'+(k&&runsOf(k)||'')+'" placeholder="?"></div></div>'
+    +'<div class="row2"><div><label>Run</label><input id="plR" inputmode="decimal" autocomplete="off" value="'+esc(o.run||(k?nextRun(k,true):''))+'"></div><div><label>Runs in field</label><input id="plN" type="number" inputmode="numeric" value="'+(k&&runsOf(k)||'')+'" placeholder="?"></div></div>'
     +'<div class="row2"><div><label>Staff</label><select id="plE"><option value="">pick…</option>'+staff.map(function(e){return '<option value="'+esc(e)+'"'+(e===o.emp?' selected':'')+'>'+esc(nameOf(e))+'</option>';}).join('')+'</select></div><div><label>Move at</label><input id="plAt" type="time" value="'+esc(at)+'"></div></div>'
     +'<div class="row2"><div><label>Amount (mm)</label><input id="plMm" type="number" inputmode="decimal" value="'+(mm||'')+'"></div><div><label>Date</label><input id="plD" type="date" value="'+(o.d||today())+'"></div></div>'
     +(staff.length?'':'<div class="small" style="color:var(--r2)">No staff set up yet — add them under Settings → Team.</div>')
     +'<div style="display:flex;gap:8px"><button class="btn" style="flex:1;padding:12px" onclick="plSave('+(ex?jsq(ex.id):'null')+')">'+(ex?'Save changes':'+ Add to tonight’s plan')+'</button>'+(ex?'<button class="btn r" onclick="delOp('+jsq(ex.id)+')">Delete</button>':'')+'</div></div>');
 }
 function plMachChange(){var ms=machState(document.getElementById('plM').value);if(ms.inAt&&ms.inAt>nowDT())document.getElementById('plAt').value=ms.inAt.slice(11,16);}
-function plFieldChange(){var k=document.getElementById('plK').value;if(!k)return;document.getElementById('plR').value=nextRun(k);document.getElementById('plN').value=runsOf(k)||'';
+function plFieldChange(){var k=document.getElementById('plK').value;if(!k)return;document.getElementById('plR').value=nextRun(k,true);document.getElementById('plN').value=runsOf(k)||'';
   var s=stat(BYKEY[k]);if(!document.getElementById('plMm').value&&s.mm2)document.getElementById('plMm').value=s.mm2;}
 function plSave(id){
   var g=function(x){return document.getElementById(x).value;};
   if(!g('plM')||!g('plK')){toast('Pick a machine and a field');return;}
   var n=parseInt(g('plN'));if(n>0&&n!==runsOf(g('plK'))){cfg().runs[g('plK')]=n;PEND.cfg=++SEQ;}
   var u=user(),o=id?ops()[id]:{id:newId(),t:'plan',by:u?u.emp:''};
-  o.m=g('plM');o.k=g('plK');o.run=+g('plR')||1;o.emp=g('plE');o.at=g('plAt');o.mm=+g('plMm')||0;o.d=g('plD');
+  o.m=g('plM');o.k=g('plK');o.run=rid(g('plR'))||'1';o.emp=g('plE');o.at=g('plAt');o.mm=+g('plMm')||0;o.d=g('plD');
   opPut(o);opsCommit();closeModal();
 }
 
@@ -1252,16 +1275,16 @@ function vSup(){
     return '<tr><td class="fn" onclick="openField('+jsq(k)+')">'+mini(x[2])+esc(f.field)+'<div class="sub">'+esc(crop(f))+'</div></td>'
       +'<td><div class="bar" style="width:110px"><i style="width:'+pct+'%"></i></div><span class="small">'+fp.done+' of '+(fp.N||'?')+' runs done · '+fp.running.length+' running</span></td>'
       +'<td class="n small">'+tShow(fp.start)+'</td><td class="n"><b>'+(fp.N?tShow(fp.est):'<span class="muted small">set runs</span>')+'</b></td>'
-      +'<td><button class="btn o sm" onclick="openPlan({k:'+jsq(k)+'})">+ plan next run</button></td></tr>';}).join('');
+      +'<td style="white-space:nowrap">'+(rmField(k)?'<div class="small" style="font-weight:600;color:var(--g1);margin-bottom:3px">next: run '+esc(nextRun(k,true))+'</div>':'')+mapBtn(k,nextRun(k,true),'')+' <button class="btn o sm" onclick="openPlan({k:'+jsq(k)+'})">+ plan next run</button></td></tr>';}).join('');
   var trows=todo.map(function(x){var f=x[0],s=x[2],k=key(f);
     return '<tr><td class="fn" onclick="openField('+jsq(k)+')">'+mini(s)+esc(f.field)+'<div class="sub">'+esc(crop(f))+(s.sub?' · '+esc(s.sub):'')+'</div></td><td>'+badge(s)+'</td>'
       +'<td class="n">'+fmt(acres(f),1)+' ac</td><td class="n small">'+(runsOf(k)?runsOf(k)+' runs':'<span class="muted">runs?</span>')+'</td>'
-      +'<td><button class="btn sm" onclick="openPlan({k:'+jsq(k)+'})">+ plan</button></td></tr>';}).join('');
+      +'<td style="white-space:nowrap">'+mapBtn(k,'','')+' <button class="btn sm" onclick="openPlan({k:'+jsq(k)+'})">+ plan</button></td></tr>';}).join('');
   var byStaff={};plans.forEach(function(p){(byStaff[p.emp||'']=byStaff[p.emp||'']||[]).push(p);});
   var plrows=plans.map(function(p){var m=mach(p.m),st=machState(p.m);
     return '<tr><td class="n"><b>'+esc(p.at)+'</b>'+(p.d!==T?'<div class="muted small">'+dm(p.d)+'</div>':'')+'</td><td>'+esc(nameOf(p.emp))+'</td><td>'+esc(m?m.n:'?')+'</td>'
       +'<td class="small">'+(st.cur?esc(fName(st.cur.k))+' r'+st.cur.run+' <span class="muted">(in '+tShow(st.inAt)+')</span>':'<span class="muted">idle</span>')+'</td>'
-      +'<td>→ <b>'+esc(fName(p.k))+'</b> run '+p.run+(p.mm?' · '+p.mm+'mm':'')+'</td><td><button class="btn o sm" onclick="openPlan({id:'+jsq(p.id)+'})">edit</button></td></tr>';}).join('');
+      +'<td>→ <b>'+esc(fName(p.k))+'</b> run '+p.run+(p.mm?' · '+p.mm+'mm':'')+'</td><td style="white-space:nowrap">'+mapBtn(p.k,p.run,'')+' <button class="btn o sm" onclick="openPlan({id:'+jsq(p.id)+'})">edit</button></td></tr>';}).join('');
   return '<div class="filters"><select onchange="S.supEst=this.value;render()"><option value="ALL"'+(sel==='ALL'?' selected':'')+'>All estates</option>'+ests.map(function(e){return '<option'+(e===sel?' selected':'')+'>'+esc(e)+'</option>';}).join('')+'</select>'
     +'<button class="btn sm" onclick="openPlan({est:S.supEst===\'ALL\'?\'\':S.supEst})">+ Plan a move</button><button class="btn o sm" onclick="pull()">↻ Refresh</button></div>'
     +'<div class="kpis"><div class="kpi"><div class="l">Running</div><div class="v">'+nRun+'</div><div class="s">of '+M.length+' machines</div></div>'
@@ -1287,14 +1310,15 @@ function vStaff(){
   var mv=mine.map(function(p){var m=mach(p.m),st=machState(p.m),f=BYKEY[p.k];
     return card('<div style="display:flex;align-items:center;gap:10px"><div style="font-family:var(--serif);font-weight:600;font-size:26px;color:var(--g1)">'+esc(p.at)+'</div><div style="flex:1"><div style="font-size:16px"><b>'+esc(m?m.n:'?')+'</b></div>'
       +'<div class="small muted">'+(st.cur?'now on '+esc(fName(st.cur.k))+' run '+st.cur.run+(st.running?' · finishes '+tShow(st.inAt):' · finished '+tShow(st.inAt)):'not running')+'</div></div></div>'
-      +'<div style="font-size:17px;margin:8px 0">Move to <b>'+esc(f?f.field:p.k)+'</b> · run <b>'+p.run+'</b>'+(runsOf(p.k)?' of '+runsOf(p.k):'')+(p.mm?' · <b>'+p.mm+'mm</b>':'')+'</div>'
+      +'<div style="font-size:17px;margin:8px 0">Move to <b>'+esc(f?f.field:p.k)+'</b> · run <b>'+esc(p.run)+'</b>'+(runsOf(p.k)?' of '+runsOf(p.k):'')+(p.mm?' · <b>'+p.mm+'mm</b>':'')+'</div>'
+      +(rmField(p.k)?'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">'+mapBtn(p.k,p.run,'Map — where it goes')+'<span class="small" style="font-weight:600;color:var(--g1)">After this: '+esc(rmAfterTxt(p.k,p.run).replace(/^next: /,''))+'</span></div>':'')
       +(p.d!==T?'<div class="small muted">planned for '+dm(p.d)+'</div>':'')
       +'<button class="btn" style="width:100%;padding:14px;font-size:16px" onclick="openStart('+jsq(p.id)+')">▶ I’ve moved it — start</button>','var(--r3)');}).join('');
   var rn=running.map(function(x){var m=x[0],st=x[1],c=st.cur;
     return card('<div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><b style="font-size:16px">'+esc(m.n)+'</b><div>'+esc(fName(c.k))+' · run '+c.run+(runsOf(c.k)?' of '+runsOf(c.k):'')+'</div>'
       +'<div class="small muted">started '+tShow(c.s)+(c.spd?' · '+c.spd+' m/h':'')+(c.ang?' · '+c.ang+'°':'')+'</div></div>'
       +'<div style="text-align:right">'+(st.running?'<div class="small muted">finishes</div><div style="font-family:var(--serif);font-weight:600;font-size:24px;color:var(--g1)">'+tShow(st.inAt)+'</div><div class="small">'+durShow(st.left)+' left</div>':'<span class="badge c6">finished '+tShow(st.inAt)+'</span>')+'</div></div>'
-      +(st.running?'<button class="btn r sm" style="margin-top:8px" onclick="stopMachine('+jsq(m.id)+')">Stopped early</button>':''),st.running?'var(--g2)':'#bbb');}).join('');
+      +'<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">'+(st.running?'<button class="btn r sm" onclick="stopMachine('+jsq(m.id)+')">Stopped early</button>':'')+mapBtn(c.k,c.run)+(rmField(c.k)?'<span class="small" style="font-weight:600;color:var(--g1)">'+esc(rmAfterTxt(c.k,c.run))+'</span>':'')+'</div>',st.running?'var(--g2)':'#bbb');}).join('');
   var T2=team(),sel='';
   if(myRole()==='sup'||myRole()==='mgr'){var st=Object.keys(T2).filter(function(e){return T2[e].r==='staff';});
     sel='<div class="filters"><span class="small muted">Showing the page for</span><select onchange="S.staffAs=this.value;render()"><option value="'+esc(u.emp)+'">me</option>'+st.map(function(e){return '<option value="'+esc(e)+'"'+(e===who?' selected':'')+'>'+esc(nameOf(e))+'</option>';}).join('')+'</select></div>';}
@@ -1345,8 +1369,379 @@ function teamEst(e,x,on){var t=team()[e];t.est=(t.est||[]).filter(function(y){re
 function setRuns(k,v){if(!canEdit())return;var n=parseInt(v);if(n>0)cfg().runs[k]=n;else delete cfg().runs[k];cfgTouch();}
 function setRunLen(k,v){if(!canEdit())return;var n=parseFloat(v);if(n>0)cfg().runLen[k]=n;else delete cfg().runLen[k];cfgTouch();}
 
+/* ── RUN MAPS core: reads the Land App "Map layers" export (zip of a .shp/.dbf of labelled lines)
+   and turns it into irrigation runs per field.
+   Lines labelled with a number ("3", "8 - Headland", "6.1") are runs; labels with a comma list
+   ("Order:\n1,4,2,5,3,6+7,8", "Machine 2:\n5,6,7") are the run order (one per machine);
+   "3 Nights 2 Days" labels are the time the field takes. Fields are found by laying the runs over
+   FieldPlan's own field boundaries; anything that can't be placed is listed for linking by hand. ── */
+async function rmUnzip(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('not a zip file');
+  const n = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true); const out = {};
+  for (let k = 0; k < n; k++) {
+    const meth = dv.getUint16(p + 10, true), csz = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true),
+      xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl));
+    p += 46 + nl + xl + cl;
+    const o = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true), raw = u8.subarray(o, o + csz);
+    out[name] = async () => {
+      if (meth === 0) return raw.slice().buffer;
+      const s = new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return await new Response(s).arrayBuffer();
+    };
+  }
+  return out;
+}
+function rmReadShp(buf) { // polylines / polygons / points → [[ [x,y],... ], ...] per record (parts joined)
+  const dv = new DataView(buf), out = [];
+  let p = 100;
+  while (p + 8 <= buf.byteLength) {
+    const len = dv.getInt32(p + 4, false) * 2, c = p + 8, t = dv.getInt32(c, true);
+    let pts = [];
+    if (t === 3 || t === 5 || t === 13 || t === 15 || t === 23 || t === 25) {
+      const np = dv.getInt32(c + 36, true), npt = dv.getInt32(c + 40, true), q = c + 44 + np * 4;
+      for (let i = 0; i < npt; i++) pts.push([dv.getFloat64(q + i * 16, true), dv.getFloat64(q + i * 16 + 8, true)]);
+    } else if (t === 1 || t === 11 || t === 21) pts = [[dv.getFloat64(c + 4, true), dv.getFloat64(c + 12, true)]];
+    out.push(pts);
+    p = c + len;
+  }
+  return out;
+}
+function rmReadDbf(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf), n = dv.getUint32(4, true), hl = dv.getUint16(8, true), rl = dv.getUint16(10, true);
+  const flds = []; let off = 1;
+  for (let p = 32; p < hl - 1 && u8[p] !== 0x0D; p += 32) {
+    let nm = ''; for (let i = 0; i < 11 && u8[p + i]; i++) nm += String.fromCharCode(u8[p + i]);
+    flds.push({ nm, len: u8[p + 16], off }); off += u8[p + 16];
+  }
+  const td = new TextDecoder('utf-8'), rows = [];
+  for (let r = 0; r < n; r++) {
+    const b = hl + r * rl, o = {};
+    for (const f of flds) o[f.nm] = td.decode(u8.subarray(b + f.off, b + f.off + f.len)).replace(/\0/g, '').trim();
+    rows.push(o);
+  }
+  return rows;
+}
+const RM_DUR = /(\d+)\s*N(?:ights?)?\s*,?\s*(\d+)\s*D(?:ays?)?|(\d+)\s*D(?:ays?)?\s*,?\s*(\d+)\s*N(?:ights?)?/i;
+function rmDur(t) { const m = RM_DUR.exec(t || ''); if (!m) return null; const n = m[1] || m[4], d = m[2] || m[3]; return { txt: n + ' night' + (n === '1' ? '' : 's') + ' ' + d + ' day' + (d === '1' ? '' : 's'), raw: m[0] }; }
+const RM_ID = /\d+[a-z]?(?:\.\d+)?/gi;
+// one comma piece of an order list → a step {t:'6+7', ids:['6','7']} (or a text step like "Headland")
+function rmStep(piece) {
+  const t = piece.replace(/\s+/g, ' ').replace(/\.$/, '').trim(); if (!t) return null;
+  const letters = t.replace(RM_ID, '').replace(/[\s+\/&.-]/g, '');
+  const ids = (/^(pm|am|rw|gun|boom|roadway)?$/i.test(letters) || letters.length <= 2) ? (t.match(RM_ID) || []).map(x => x.toLowerCase()) : [];
+  return { t, ids };
+}
+// a label that holds one or more order lists → [{m:'Machine 1', steps:[...]}] (null if it isn't one)
+function rmOrder(label) {
+  let t = String(label || '').replace(/\r/g, '');
+  const looks = /order/i.test(t) || /^\s*(M\d|Machine\s*\d|\d(st|nd|rd|th)\s*Machine)/i.test(t);
+  if (!looks || !/\d\s*[,+]\s*\d|\d\s*,/.test(t)) return null;
+  const d = rmDur(t); if (d) t = t.replace(d.raw, ' ');
+  const seqs = []; let head = '';
+  const nMach = /(\d)\s*Machines/i.test(t);            // "2 Machines" → each line is its own machine
+  const mach = s => { const m = /(M\s?\d|Machine\s*\d|\d(?:st|nd|rd|th)\s*Machine|Boom|Gun)/i.exec(s); return m ? m[1].replace(/^M\s?(\d)$/i, 'Machine $1').replace(/^(\d)(st|nd|rd|th)\s*Machine$/i, 'Machine $1').replace(/^(boom|gun)$/i, w => w[0].toUpperCase() + w.slice(1).toLowerCase()).replace(/\s+/g, ' ') : ''; };
+  let newSeq = true;
+  for (let line of t.split('\n')) {
+    line = line.trim(); if (!line) continue;
+    let pre = '', body = line;
+    const m = /^(.*?[:;\-])\s*(\d.*)$/.exec(line);
+    if (m && /[a-z]/i.test(m[1])) { pre = m[1]; body = m[2]; }
+    else if (/^[a-z]/i.test(line)) {
+      const k = line.search(/\d/);
+      // a heading line ("Order - M1", "Machine 2", "Order: 2nd Machine", "2 Machines:") — no list on it
+      if (k < 0 || !/[,+]/.test(line.slice(k)) && mach(line) || /^order\b[^,+]*$/i.test(line)) { const h = mach(line); if (h) head = h; newSeq = true; continue; }
+      pre = line.slice(0, k); body = line.slice(k);
+    }
+    const steps = body.split(',').map(rmStep).filter(Boolean);
+    if (!steps.some(x => x.ids.length)) { const h = mach(line); if (h) { head = h; newSeq = true; } else if (seqs.length && steps.length) seqs[seqs.length - 1].steps.push(...steps); continue; }
+    const last = steps[steps.length - 1], trail = last && /boom|gun/i.test(last.t) ? (/boom/i.test(last.t) ? 'Boom' : 'Gun') : '';
+    const name = mach(pre) || trail;
+    if (!seqs.length || newSeq || name || nMach) seqs.push({ m: name || head || (nMach ? 'Machine ' + (seqs.length + 1) : ''), steps });
+    else seqs[seqs.length - 1].steps.push(...steps);   // a list that carries on over the next line
+    newSeq = false; head = name ? head : head;
+  }
+  if (!seqs.length) return null;
+  return { seqs, dur: d ? d.txt : '' };
+}
+function rmRunLabel(label) { // "8 - Headland" → {id:'8', note:'Headland'}; "headland - 5" → {id:'5', note:'Headland'}
+  const L = String(label || '').replace(/\r/g, '').trim(); if (!L) return null;
+  let m = /^(\d+[a-z]?(?:\.\d+)?)\b\s*[-–:]?\s*([\s\S]*)$/i.exec(L);
+  if (m && !rmDur(L) && parseFloat(m[1]) < 100) return { id: m[1].toLowerCase(), note: m[2].replace(/\s+/g, ' ').trim() };
+  m = /^(headland|roadway)(?:\s*run)?\s*[-–]?\s*\n?\s*(\d+[a-z]?)\b/i.exec(L);
+  if (m) return { id: m[2].toLowerCase(), note: 'Headland' };
+  return null;
+}
+function rmMetres(a, b) { const dx = (a[0] - b[0]) * Math.cos(a[1] * Math.PI / 180) * 111320, dy = (a[1] - b[1]) * 110540; return Math.hypot(dx, dy); }
+function rmMid(pts) { if (pts.length === 1) return pts[0]; let L = 0; const seg = []; for (let i = 1; i < pts.length; i++) { const d = rmMetres(pts[i - 1], pts[i]); seg.push(d); L += d; } let h = L / 2; for (let i = 0; i < seg.length; i++) { if (h <= seg[i]) { const f = seg[i] ? h / seg[i] : 0; return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f]; } h -= seg[i]; } return pts[pts.length - 1]; }
+function rmInRing(pt, ring) { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const a = ring[i], b = ring[j]; if (((a[1] > pt[1]) !== (b[1] > pt[1])) && (pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0])) c = !c; } return c; }
+function rmRingDist(pt, ring) { let best = 1e9; for (let i = 1; i < ring.length; i++) { const a = ring[i - 1], b = ring[i]; const kx = Math.cos(pt[1] * Math.PI / 180) * 111320, ky = 110540; const ax = (a[0] - pt[0]) * kx, ay = (a[1] - pt[1]) * ky, bx = (b[0] - pt[0]) * kx, by = (b[1] - pt[1]) * ky; const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy; let t = L ? -(ax * dx + ay * dy) / L : 0; t = Math.max(0, Math.min(1, t)); best = Math.min(best, Math.hypot(ax + t * dx, ay + t * dy)); } return best; }
+function rmSimplify(ring, max) { if (ring.length <= max) return ring; const step = ring.length / max, out = []; for (let i = 0; i < ring.length; i += step) out.push(ring[Math.floor(i)]); out.push(ring[ring.length - 1]); return out; }
+const r6 = v => Math.round(v * 1e6) / 1e6, rpt = p => [r6(p[0]), r6(p[1])];
+
+/* Build the runs file.
+   shp/dbf: ArrayBuffers. geo: FieldPlan's ALL_ESTATES_GEO. toKey(estate, geoName) → field key or null.
+   prev: the currently published file (to keep links made by hand). */
+function rmBuild(shpBuf, dbfBuf, geo, toKey, prev) {
+  const shapes = rmReadShp(shpBuf), rows = rmReadDbf(dbfBuf);
+  const lab = r => r.Label != null ? r.Label : (r.LABEL || r.label || r.Name || r.NAME || r.Text || '');
+  let bad = 0; shapes.forEach(s => s.forEach(p => { if (Math.abs(p[0]) > 180 || Math.abs(p[1]) > 90) bad++; }));
+  if (bad) throw new Error('the map isn’t in latitude/longitude (WGS84) — export it from Land App as WGS84');
+  const runs = [], orders = [], durs = [], notes = [];
+  shapes.forEach((pts, i) => {
+    if (!pts.length) return; const L = lab(rows[i] || {});
+    const o = rmOrder(L); if (o) { o.seqs.forEach(s => orders.push({ m: s.m, steps: s.steps, ids: new Set(s.steps.flatMap(x => x.ids)), pt: pts[0], dur: o.dur, txt: L })); return; }
+    const r = rmRunLabel(L); if (r && pts.length > 1) { runs.push({ id: r.id, note: r.note, pts: pts.map(rpt), mid: rmMid(pts) }); return; }
+    const d = rmDur(L); if (d) { durs.push({ txt: d.txt, pt: pts[0], extra: L.replace(d.raw, '').replace(/\s+/g, ' ').trim() }); return; }
+    const t = L.replace(/\s+/g, ' ').trim(); if (t && !/^new text/i.test(t)) notes.push({ t, pt: pts[0] });
+  });
+  // 1) each run goes to the nearest order list that names its number (each list takes each number once)
+  const pairs = [];
+  runs.forEach((ru, ri) => orders.forEach((o, oi) => { const base = ru.id.split('.')[0]; if (o.ids.has(ru.id) || o.ids.has(base)) { const d = rmMetres(ru.mid, o.pt); if (d < 1500) pairs.push([d, ri, oi]); } }));
+  pairs.sort((a, b) => a[0] - b[0]);
+  const used = new Set(), got = new Set(), groups = orders.map(o => ({ seqs: [{ m: o.m, steps: o.steps }], runs: [], pt: o.pt, dur: o.dur ? [o.dur] : [], notes: [] }));
+  for (const [d, ri, oi] of pairs) { const k = oi + '|' + runs[ri].id; if (got.has(ri) || used.has(k)) continue; used.add(k); got.add(ri); groups[oi].runs.push(runs[ri]); }
+  // 2) runs with no order list: cluster neighbours (≤300 m, no repeated numbers) — order = run numbers ascending
+  const left = runs.filter((_, i) => !got.has(i)), cl = [];
+  left.forEach(ru => { let best = null, bd = 300; cl.forEach(c => { if (c.runs.some(x => x.id === ru.id)) return; c.runs.forEach(x => { const d = rmMetres(x.mid, ru.mid); if (d < bd) { bd = d; best = c; } }); }); if (best) best.runs.push(ru); else cl.push({ runs: [ru] }); });
+  cl.forEach(c => { const ids = [...new Set(c.runs.map(r => r.id))].sort((a, b) => parseFloat(a) - parseFloat(b) || (a < b ? -1 : 1)); groups.push({ seqs: [{ m: '', steps: ids.map(i => ({ t: i, ids: [i] })), auto: 1 }], runs: c.runs, pt: c.runs[0].mid, dur: [], notes: [] }); });
+  const groupC = g => g.runs.length ? [g.runs.reduce((a, r) => a + r.mid[0], 0) / g.runs.length, g.runs.reduce((a, r) => a + r.mid[1], 0) / g.runs.length] : g.pt;
+  // 3) time labels and notes go to the nearest group
+  const near = (pt, max) => { let b = null, bd = max; groups.forEach(g => { const pts = [g.pt, ...g.runs.map(r => r.mid)]; pts.forEach(p => { const d = rmMetres(p, pt); if (d < bd) { bd = d; b = g; } }); }); return b; };
+  durs.forEach(d => { const g = near(d.pt, 600); if (g && !g.dur.includes(d.txt)) g.dur.push(d.txt + (d.extra ? ' (' + d.extra + ')' : '')); });
+  notes.forEach(n => { const g = near(n.pt, 300); if (g) g.notes.push(n.t); });
+  // 4) which field? the FieldPlan boundary most of the group's runs sit in (else the nearest within 60 m)
+  const polys = []; Object.keys(geo || {}).forEach(est => (geo[est] || []).forEach(f => (f.rings || []).forEach(ring => { if (ring.length < 3) return; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; ring.forEach(p => { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }); polys.push({ est, name: f.name, ring, bb: [x0, y0, x1, y1] }); })));
+  const polyAt = pt => polys.filter(P => pt[0] >= P.bb[0] && pt[0] <= P.bb[2] && pt[1] >= P.bb[1] && pt[1] <= P.bb[3] && rmInRing(pt, P.ring));
+  const links = (prev && prev.links) || [];
+  const sig = g => [...new Set(g.runs.map(r => r.id))].sort().join(',');
+  const out = { v: 1, fields: {}, unlinked: [], links: [], stats: { lines: shapes.length, runs: runs.length, orders: orders.length, groups: groups.length } };
+  groups.forEach((g, gi) => {
+    if (!g.runs.length && !g.seqs.some(s => s.steps.length)) return;
+    const c = groupC(g), s = sig(g);
+    let key = null, how = '', poly = null;
+    const lk = links.find(l => l.ids === s && rmMetres(l.c, c) < 150); if (lk) { key = lk.k; how = 'by hand'; }
+    const cnt = new Map(); (g.runs.length ? g.runs.map(r => r.mid) : [g.pt]).forEach(p => polyAt(p).forEach(P => cnt.set(P, (cnt.get(P) || 0) + 1)));
+    let bestN = 0; cnt.forEach((n, P) => { if (n > bestN || (n === bestN && poly && P.ring.length < poly.ring.length)) { bestN = n; poly = P; } });
+    if (!poly) { let bd = 60; polys.forEach(P => { const d = rmRingDist(c, P.ring); if (d < bd) { bd = d; poly = P; } }); }
+    if (!key && poly) { key = toKey(poly.est, poly.name); how = key ? 'boundary' : ''; }
+    if (lk && key === '-') return; // marked "ignore" by hand
+    const item = { seqs: g.seqs, runs: g.runs.map(r => ({ id: r.id, note: r.note, p: r.pts })), dur: g.dur, notes: g.notes, c: rpt(c), sig: s, geo: poly ? poly.est + ' · ' + poly.name : '', how, ring: poly ? rmSimplify(poly.ring, 80).map(rpt) : null };
+    if (lk) out.links.push(lk);
+    if (!key) { item.gid = 'g' + gi; if (!poly) { let bd = 1e9, bp = null; polys.forEach(P => { const d = rmRingDist(c, P.ring); if (d < bd) { bd = d; bp = P; } }); if (bp && bd < 3000) item.near = bp.est + ' · ' + bp.name + ' (' + Math.round(bd) + ' m away)'; } out.unlinked.push(item); return; }
+    rmAdd(out, key, item);
+  });
+  return out;
+}
+function rmAdd(out, key, item) {
+  const F = out.fields[key] || (out.fields[key] = { seqs: [], runs: {}, dur: [], notes: [], ring: null, geo: '', how: '', parts: [] });
+  const ren = {};
+  item.runs.forEach(r => { let id = r.id; if (F.runs[id]) { let n = 2; while (F.runs[id + '#' + n]) n++; ren[r.id] = id + '#' + n; id = ren[r.id]; } F.runs[id] = { p: r.p, note: r.note || '' }; });
+  item.seqs.forEach(s => F.seqs.push({ m: s.m, auto: s.auto || 0, steps: s.steps.map(st => ({ t: st.t, ids: st.ids.map(i => ren[i] || i) })) }));
+  // an automatic (no order label) list joining a field that has a real order is dropped if it adds nothing
+  if (F.seqs.some(s => !s.auto)) F.seqs = F.seqs.filter(s => !s.auto || s.steps.some(st => st.ids.some(i => !F.seqs.some(o => !o.auto && o.steps.some(x => x.ids.includes(i))))));
+  item.dur.forEach(d => { if (!F.dur.includes(d)) F.dur.push(d); });
+  item.notes.forEach(n => { if (!F.notes.includes(n)) F.notes.push(n); });
+  if (!F.ring && item.ring) F.ring = item.ring;
+  if (!F.geo) F.geo = item.geo; F.how = F.how || item.how;
+  F.parts.push({ c: item.c, sig: item.sig });
+}
+
+// FieldPlan boundary name → FieldPlan field (boundary names carry extras like "RPA", ".A", "(Eus)")
+function rmMatcher(F, keyOf) {
+  const N = s => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
+  const clean = (n, est) => { let s = String(n || '');
+    s = s.replace(/\s*[-_]?\s*RPA\s*$/i, '').replace(/^Dummy\s+/i, '').replace(/[._]\s*A\d*\s*$/i, '').replace(/\s+\(?[A-C]\d?\)?\s*$/, '').replace(/_\d+$/, '').replace(/\s*\((spinney[^)]*|veg|eus|wret|bot)\)\s*$/i, '');
+    return N(s).replace(N(est), ''); };
+  const byE = {};
+  F.forEach(f => { const e = f.estate; (byE[e] = byE[e] || []).push({ f, n: N(f.field), c: N(f.field).replace(N(e), '').replace(/headings$|h$/, '') }); });
+  const bigr = s => { const o = new Map(); for (let i = 0; i < s.length - 1; i++) { const b = s.slice(i, i + 2); o.set(b, (o.get(b) || 0) + 1); } return o; };
+  const dice = (a, b) => { if (a.length < 2 || b.length < 2) return a === b ? 1 : 0; const A = bigr(a), B = bigr(b); let m = 0; A.forEach((v, k) => { m += Math.min(v, B.get(k) || 0); }); return 2 * m / (a.length + b.length - 2); };
+  return (est, name) => {
+    const L = byE[est] || []; if (!L.length) return null;
+    const raw = N(name), c = clean(name, est), cH = c.replace(/headings$|h$/, '');
+    let hit = L.filter(x => x.n === raw); if (hit.length === 1) return keyOf(hit[0].f);
+    hit = L.filter(x => x.n === c || x.c === c || x.c === cH); if (hit.length === 1) return keyOf(hit[0].f);
+    hit = L.filter(x => c.length >= 4 && (x.c.startsWith(c) || c.startsWith(x.c)) && x.c.length >= 4); if (hit.length === 1) return keyOf(hit[0].f);
+    const sc = L.map(x => [dice(cH, x.c), x]).sort((a, b) => b[0] - a[0]);
+    if (sc[0] && sc[0][0] >= 0.78 && (!sc[1] || sc[0][0] - sc[1][0] >= 0.08)) return keyOf(sc[0][1].f);
+    return null;
+  };
+}
+
+/* ═══ RUN MAPS in the app ═════════════════════════════════════════════════
+   RUNMAP = irr_runs.json (published from the Admin page): per field key →
+   {seqs:[{m:'Machine 1', steps:[{t:'6+7', ids:['6','7']}]}], runs:{id:{p:[[lon,lat]..], note}}, dur:[], notes:[], ring}
+   Used for: the run order (what's next), the number of runs in a field, and the map staff open. ══ */
+var RUNMAP=null, RUNMAP_SRC='';
+function rid(x){return String(x==null?'':x).trim().toLowerCase();}
+async function loadRunMap(){
+  var u=user(),j=null;
+  try{var r=await irrFetch('irr-runs?emp='+encodeURIComponent(u?u.emp:''),{cache:'no-store'});if(r.ok){var o=await r.json();if(o&&o.ok)j=o.data;}}catch(e){}
+  if(!j){try{var r2=await fetch('https://raw.githubusercontent.com/matthewabrey/Abrey-Cropping/irrigation-data/irr_runs.json?t='+Math.floor(Date.now()/300000));if(r2.ok)j=await r2.json();}catch(e){}}
+  if(j&&j.fields){RUNMAP=j;RUNMAP_SRC='live';try{localStorage.setItem('irr_runmap',JSON.stringify(j));}catch(e){}}
+  else if(!RUNMAP){try{var c=JSON.parse(localStorage.getItem('irr_runmap')||'null');if(c&&c.fields){RUNMAP=c;RUNMAP_SRC='saved on this phone';}}catch(e){}}
+  if(LOCAL)softRender();
+}
+function rmField(k){return RUNMAP&&RUNMAP.fields&&RUNMAP.fields[k]||null;}
+function rmSeqs(k){var F=rmField(k);return F?F.seqs.filter(function(s){return s.steps.some(function(st){return st.ids.length;});}):[];}
+function rmRunIds(k){var o=[];rmSeqs(k).forEach(function(s){s.steps.forEach(function(st){st.ids.forEach(function(i){if(o.indexOf(i)<0)o.push(i);});});});
+  var F=rmField(k);if(F)Object.keys(F.runs).forEach(function(i){if(o.indexOf(i)<0)o.push(i);});return o;}
+function rmOrderTxt(k){return rmSeqs(k).map(function(s){return (s.m?s.m+': ':'')+s.steps.map(function(st){return st.t;}).join(' → ');}).join('  ·  ');}
+// runs already started in the current cycle, plus (optionally) runs planned but not started yet
+function rmTaken(k,withPlans){var fp=fieldProg(k),t=(fp.pid&&!fp.complete)?fp.runs.map(rid):[];
+  if(withPlans)opList('plan').forEach(function(p){if(p.k===k&&!p.done&&p.d>=addDays(today(),-1))t.push(rid(p.run));});return t;}
+/* the next step in the field's run order: after a given run (same machine line), or the first not yet started */
+function rmNext(k,after,withPlans){
+  var seqs=rmSeqs(k);if(!seqs.length)return null;var taken=rmTaken(k,withPlans);
+  var open=function(st){return st.ids.length&&st.ids.some(function(i){return taken.indexOf(i)<0;});};
+  if(after!=null&&after!==''){var a=rid(after);
+    for(var si=0;si<seqs.length;si++){var S2=seqs[si].steps;for(var i=0;i<S2.length;i++){if(S2[i].ids.indexOf(a)>=0){
+      taken=taken.concat(S2[i].ids);for(var j=i+1;j<S2.length;j++)if(open(S2[j]))return {st:S2[j],m:seqs[si].m};
+      return {st:null,m:seqs[si].m,end:1};}}}}
+  for(var s=0;s<seqs.length;s++)for(var x=0;x<seqs[s].steps.length;x++)if(open(seqs[s].steps[x]))return {st:seqs[s].steps[x],m:seqs[s].m};
+  return {st:seqs[0].steps.filter(function(st){return st.ids.length;})[0],m:seqs[0].m,again:1};
+}
+function rmNextRun(k,withPlans){var n=rmNext(k,null,withPlans),taken=rmTaken(k,withPlans);if(!n||!n.st)return null;
+  for(var i=0;i<n.st.ids.length;i++)if(taken.indexOf(n.st.ids[i])<0)return n.st.ids[i];return n.st.ids[0];}
+function rmAfterTxt(k,run){var n=rmNext(k,run,false);if(!n)return '';if(n.end||!n.st)return 'last run on '+(n.m?n.m.toLowerCase()+'’s list':'the list');return 'next: run '+n.st.t+(n.m?' ('+n.m+')':'');}
+function mapBtn(k,run,label){return rmField(k)?'<button class="btn o sm" onclick="event.stopPropagation();openMap('+jsq(k)+','+jsq(String(run==null?'':run))+')">🗺 '+(label||'Map')+'</button>':'';}
+
+/* ── the map (Leaflet, satellite) ─────────────────────────────────────── */
+var _leaf=null;
+function loadLeaflet(){
+  if(window.L&&L.map)return Promise.resolve();if(_leaf)return _leaf;
+  _leaf=new Promise(function(res,rej){var c=document.createElement('link');c.rel='stylesheet';c.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.appendChild(c);
+    var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';s.onload=function(){res();};s.onerror=function(){_leaf=null;rej(new Error('map library didn’t load — check signal'));};document.head.appendChild(s);});
+  return _leaf;
+}
+var _map=null,_myDot=null,_watch=null;
+function openMap(k,hi,data,title){
+  var F=data||rmField(k);if(!F){toast('No run map for this field yet — upload one on the Admin page');return;}
+  var f=k?BYKEY[k]:null,fp=k?fieldProg(k):null,taken=k?rmTaken(k,false):[],running={};
+  if(fp)fp.running.forEach(function(s){running[rid(s.run)]=1;});
+  hi=rid(hi||'');var nx=k&&!data?rmNext(k,hi||null,false):null,nextIds=nx&&nx.st?nx.st.ids:[];
+  if(!hi&&nx&&nx.st){hi=nx.st.ids.filter(function(i){return taken.indexOf(i)<0;})[0]||nx.st.ids[0];nx=rmNext(k,hi,false);nextIds=nx&&nx.st?nx.st.ids:[];}
+  var chip=function(st){var cls=st.ids.some(function(i){return running[i];})?'run':st.ids.length&&st.ids.every(function(i){return taken.indexOf(i)>=0;})?'done':st.ids.indexOf(hi)>=0?'hi':st.ids.some(function(i){return nextIds.indexOf(i)>=0;})?'nx':'';
+    return '<span class="rmchip '+cls+'">'+esc(st.t)+'</span>';};
+  var seqs=(F.seqs||[]).filter(function(s){return s.steps.length;});
+  var hiRun=hi&&F.runs[hi];
+  mapModal('<div style="display:flex;align-items:start;gap:8px"><div style="flex:1"><h2>'+esc(title||(f?f.field:'Run map'))+'</h2><div class="muted small">'+esc(f?f.estate:(F.geo||''))+(F.dur&&F.dur.length?' · ⏱ '+esc(F.dur.join(' / ')):'')+'</div></div><button class="x" style="font-size:20px;color:var(--tx3)" onclick="closeMap()">✕</button></div>'
+    +(hi?'<div class="banner info" style="margin:8px 0">Run <b>'+esc(hi)+'</b>'+(hiRun&&hiRun.note?' · '+esc(hiRun.note):'')+(k&&!data?' · <b>'+esc(rmAfterTxt(k,hi))+'</b>':'')+'</div>':'')
+    +'<div class="small" style="margin:6px 0">'+(seqs.map(function(s){return '<div style="margin:3px 0"><b>'+esc(s.m||'Order')+'</b> '+s.steps.map(chip).join('<span class="muted"> → </span>')+'</div>';}).join('')||'<span class="muted">No order on the map — runs shown by number.</span>')+'</div>'
+    +(F.notes&&F.notes.length?'<div class="banner warn" style="margin:6px 0">'+F.notes.map(esc).join('<br>')+'</div>':'')
+    +'<div id="rmMap" style="height:58vh;border-radius:8px;background:#22311a;margin-top:6px"></div>'
+    +'<div class="small muted" style="margin-top:6px"><span class="rmchip hi">orange</span> this run · <span class="rmchip nx">yellow</span> next · <span class="rmchip run">blue</span> running · <span class="rmchip done">grey</span> done this round</div>'
+    +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn o sm" onclick="mapLocate()">📍 Where am I?</button>'
+    +(hiRun?'<a class="btn o sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+hiRun.p[0][1]+','+hiRun.p[0][0]+'">🧭 Directions to run '+esc(hi)+'</a>':'')+'</div>');
+  loadLeaflet().then(function(){
+    var el=document.getElementById('rmMap');if(!el)return;if(_map){try{_map.remove();}catch(e){}}
+    _map=L.map(el,{zoomControl:true,attributionControl:true});
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:18,attribution:'Imagery © Esri'}).addTo(_map);
+    var b=[];
+    if(F.ring){var pg=L.polygon(F.ring.map(function(p){return [p[1],p[0]];}),{color:'#fff',weight:2,dashArray:'6 6',fill:false}).addTo(_map);b.push(pg.getBounds());}
+    Object.keys(F.runs).forEach(function(id){var r=F.runs[id],ll=r.p.map(function(p){return [p[1],p[0]];});
+      var col=running[id]?'#1e88e5':id===hi?'#ff6d00':nextIds.indexOf(id)>=0?'#ffd600':taken.indexOf(id)>=0?'#9e9e9e':'#ffffff',w=id===hi?7:nextIds.indexOf(id)>=0?6:4;
+      var ln=L.polyline(ll,{color:'#000',weight:w+3,opacity:.45}).addTo(_map);L.polyline(ll,{color:col,weight:w,opacity:.95}).addTo(_map);
+      L.circleMarker(ll[0],{radius:4,color:'#000',weight:1,fillColor:col,fillOpacity:1}).addTo(_map);L.circleMarker(ll[ll.length-1],{radius:4,color:'#000',weight:1,fillColor:col,fillOpacity:1}).addTo(_map);
+      var mid=ll[Math.floor(ll.length/2)];if(ll.length===2)mid=[(ll[0][0]+ll[1][0])/2,(ll[0][1]+ll[1][1])/2];
+      L.marker(mid,{icon:L.divIcon({className:'',html:'<div class="rmlab'+(id===hi?' hi':nextIds.indexOf(id)>=0?' nx':'')+'">'+esc(id.replace(/#\d+$/,''))+'</div>',iconSize:null})}).addTo(_map);
+      b.push(ln.getBounds());});
+    var all=b.reduce(function(a,x){return a?a.extend(x):L.latLngBounds(x.getSouthWest(),x.getNorthEast());},null);
+    if(hiRun){_map.fitBounds(all,{padding:[20,20]});}else if(all)_map.fitBounds(all,{padding:[20,20]});
+  }).catch(function(e){var el=document.getElementById('rmMap');if(el)el.innerHTML='<div class="pad small" style="color:#fff">'+esc(e.message)+'</div>';});
+}
+function mapLocate(){if(!_map||!navigator.geolocation){toast('Location not available');return;}
+  if(_watch!=null)navigator.geolocation.clearWatch(_watch);var first=true;
+  _watch=navigator.geolocation.watchPosition(function(p){var ll=[p.coords.latitude,p.coords.longitude];if(!_map)return;
+    if(!_myDot)_myDot=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#1a73e8',fillOpacity:1}).addTo(_map);else _myDot.setLatLng(ll);
+    if(first){first=false;_map.setView(ll,Math.max(_map.getZoom(),16));}},function(){toast('Couldn’t get your location');},{enableHighAccuracy:true,maximumAge:5000});}
+// the map opens on top of whatever sheet is open (e.g. the start screen) and closing it goes back to that sheet
+function mapModal(html){var h=document.getElementById('mapHost');if(!h){h=document.createElement('div');h.id='mapHost';document.body.appendChild(h);}
+  h.innerHTML='<div class="modal" style="z-index:56" onclick="if(event.target===this)closeMap()"><div class="sheet" style="max-width:820px">'+html+'</div></div>';}
+function closeMap(){if(_watch!=null){navigator.geolocation.clearWatch(_watch);_watch=null;}_myDot=null;if(_map){try{_map.remove();}catch(e){}_map=null;}var h=document.getElementById('mapHost');if(h)h.innerHTML='';}
+
+/* ═══ ADMIN page — upload the Land App run-map export; it links each field and publishes it ═══ */
+var ADM=null; // {out, file, err, busy}
+function vAdmin(){
+  if(!canConfigure())return '<div class="banner info">The Admin page is for supervisors, managers and the office.</div>';
+  var R=RUNMAP,cur=R?'<b>'+Object.keys(R.fields).length+'</b> fields with run maps · from <b>'+esc(R.src||'?')+'</b>'+(R.t?' · published '+new Date(R.t).toLocaleString('en-GB',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'')+(R.by?' by '+esc(first(nameOf(R.by))):'')+(RUNMAP_SRC==='live'?'':' <span class="muted">('+esc(RUNMAP_SRC)+')</span>'):'<span class="muted">No run maps published yet.</span>';
+  var h='<div class="card"><h3>🗺 Run maps</h3><div class="pad small">'
+    +'<div style="margin-bottom:8px">Live in the app: '+cur+'</div>'
+    +'<div style="margin-bottom:8px">Relay: '+(IRR_OK===true?'<b style="color:var(--g1)">● irrigation-relay working</b>':IRR_OK===false?'<b style="color:var(--r2)">● irrigation-relay not answering — using fieldplan-relay</b> <span class="muted">('+esc(IRR_WHY)+')</span>':'<span class="muted">checking…</span>')+'</div>'
+    +'<div class="muted" style="margin-bottom:10px">Export the run layer from Land App (<b>Map layers … .zip</b>, WGS84) and choose it here. Lines labelled with a number are runs, labels like <i>Order: 1,4,2,5,3,6+7,8</i> (or <i>Machine 2: 5,6,7</i>) set the order, and <i>3 Nights 2 Days</i> is the time the field takes. Each group of runs is placed on its field using FieldPlan’s boundaries; anything that can’t be placed is listed below for you to link once — your links are remembered for the next upload.</div>'
+    +'<label class="btn" style="display:inline-block">⬆ Choose run map .zip<input type="file" accept=".zip" style="display:none" onchange="admUpload(this)"></label>'
+    +(ADM&&ADM.busy?' <span class="muted">Reading '+esc(ADM.file||'')+'…</span>':'')
+    +(ADM&&ADM.err?'<div class="banner err" style="margin-top:10px">'+esc(ADM.err)+'</div>':'')
+    +'</div></div>';
+  if(!ADM||!ADM.out)return h;
+  var O=ADM.out,keys=Object.keys(O.fields),nr=keys.reduce(function(a,k){return a+Object.keys(O.fields[k].runs).length;},0);
+  var fopts=FP.F.slice().sort(function(a,b){return a.field<b.field?-1:1;}).map(function(f){return '<option value="'+esc(f.field+' — '+f.estate)+'">';}).join('');
+  h+='<div class="kpis"><div class="kpi"><div class="l">Fields linked</div><div class="v">'+keys.length+'</div><div class="s">'+nr+' runs</div></div>'
+    +'<div class="kpi"><div class="l">To link by hand</div><div class="v" style="color:'+(O.unlinked.length?'var(--r2)':'var(--g1)')+'">'+O.unlinked.length+'</div><div class="s">groups of runs</div></div>'
+    +'<div class="kpi"><div class="l">In the file</div><div class="v">'+O.stats.runs+'</div><div class="s">runs · '+O.stats.orders+' order labels</div></div></div>'
+    +'<datalist id="admFs">'+fopts+'</datalist>'
+    +'<div class="card"><h3>Publish <span class="muted small" style="font-weight:400">'+esc(ADM.file)+'</span><span class="sp"></span><button class="btn" onclick="admPublish()"'+(ADM.pub?' disabled':'')+'>'+(ADM.pub?'Publishing…':'✓ Publish to the app')+'</button></h3>'
+    +'<div class="pad small muted">Groups left unlinked aren’t published — link them first or leave them out. Publishing replaces the run maps everyone sees.</div></div>';
+  var ul=O.unlinked.map(function(u,i){var ids=u.runs.map(function(r){return r.id;}).join(', ');
+    return '<tr><td><b>'+esc(u.geo||'not on a FieldPlan boundary')+'</b>'+(u.near?'<div class="small muted">nearest: '+esc(u.near)+'</div>':'')+'<div class="muted small">runs '+esc(ids||'—')+'</div>'+(u.seqs.some(function(s){return !s.auto;})?'<div class="sub">'+esc(u.seqs.filter(function(s){return !s.auto;}).map(function(s){return (s.m?s.m+': ':'')+s.steps.map(function(x){return x.t;}).join(',');}).join(' · '))+'</div>':'')+'</td>'
+      +'<td><button class="btn o sm" onclick="admMap('+i+')">🗺 See</button></td>'
+      +'<td><input list="admFs" id="admU'+i+'" placeholder="link to field…" style="min-width:210px;padding:6px;border:1px solid var(--bd2);border-radius:6px"> <button class="btn sm" onclick="admLink('+i+')">Link</button> <button class="btn o sm" onclick="admIgnore('+i+')" title="leave out of the app">Leave out</button></td></tr>';}).join('');
+  if(O.unlinked.length)h+='<div class="card"><h3>To link by hand <span class="muted small" style="font-weight:400">tap 🗺 See to check where it is, then pick the field</span></h3><div class="tw" style="max-height:60vh"><table><thead><tr><th>Where</th><th></th><th>Field</th></tr></thead><tbody>'+ul+'</tbody></table></div></div>';
+  var lr=keys.map(function(k){var F=O.fields[k],f=BYKEY[k];return [f?f.estate:'',f?f.field:k,k,F];}).sort(function(a,b){return (a[0]+a[1])<(b[0]+b[1])?-1:1;}).map(function(x){var F=x[3],k=x[2];
+    return '<tr><td><b>'+esc(x[1])+'</b><div class="muted small">'+esc(x[0])+'</div></td><td class="small">'+esc(F.geo||'')+'<div class="muted">'+(F.how==='by hand'?'linked by hand':'matched by boundary')+'</div></td>'
+      +'<td class="n">'+Object.keys(F.runs).length+'</td><td class="small">'+esc(F.seqs.map(function(s){return (s.m?s.m+': ':'')+s.steps.map(function(st){return st.t;}).join(',');}).join(' · '))+(F.dur.length?'<div class="muted">⏱ '+esc(F.dur.join(' / '))+'</div>':'')+'</td>'
+      +'<td style="white-space:nowrap"><button class="btn o sm" onclick="admMapK('+jsq(k)+')">🗺</button> <button class="btn o sm" onclick="admMove('+jsq(k)+')">Change field</button></td></tr>';}).join('');
+  h+='<div class="card"><h3>Linked fields <span class="muted small" style="font-weight:400">check any that look wrong — “Change field” moves it</span></h3><div class="tw" style="max-height:70vh"><table><thead><tr><th>Field</th><th>Map boundary</th><th class="n">Runs</th><th>Order</th><th></th></tr></thead><tbody>'+lr+'</tbody></table></div></div>';
+  return h;
+}
+async function admUpload(inp){
+  var file=inp.files&&inp.files[0];if(!file)return;ADM={busy:1,file:file.name};render();
+  try{
+    var z=await rmUnzip(await file.arrayBuffer()),names=Object.keys(z);
+    var ns=names.filter(function(n){return /\.shp$/i.test(n);});if(!ns.length)throw new Error('no .shp file in that zip');
+    var base=ns[0].replace(/\.shp$/i,''),nd=names.filter(function(n){return n.toLowerCase()===(base+'.dbf').toLowerCase();})[0];if(!nd)throw new Error('the .dbf file (the labels) is missing from the zip');
+    var r=await fetch(FP_URL+(FP_URL.indexOf('?')<0?'?':'&')+'t='+Math.floor(Date.now()/600000));if(!r.ok)throw new Error('couldn’t read FieldPlan’s field boundaries (HTTP '+r.status+')');
+    var geo=grabVal(await r.text(),/var ALL_ESTATES_GEO\s*=\s*\{/);
+    if(!RUNMAP)await loadRunMap();
+    var out=rmBuild(await z[ns[0]](),await z[nd](),geo,rmMatcher(FP.F,key),RUNMAP);
+    out.src=file.name;ADM={out:out,file:file.name};
+  }catch(e){ADM={err:'Couldn’t read '+file.name+': '+e.message,file:file.name};}
+  inp.value='';render();
+}
+function admKeyFromText(v){var f=FP.F.filter(function(x){return x.field+' — '+x.estate===v;})[0];return f?key(f):null;}
+function admLink(i){var O=ADM.out,u=O.unlinked[i],k=admKeyFromText(document.getElementById('admU'+i).value);if(!k){toast('Pick a field from the list');return;}
+  u.how='by hand';rmAdd(O,k,u);O.links.push({c:u.c,ids:u.sig,k:k});O.unlinked.splice(i,1);toast('Linked to '+fName(k));render();}
+function admIgnore(i){var O=ADM.out,u=O.unlinked[i];O.links.push({c:u.c,ids:u.sig,k:'-'});O.unlinked.splice(i,1);render();}
+function admMap(i){var u=ADM.out.unlinked[i],runs={};u.runs.forEach(function(r){runs[r.id]=r;});openMap(null,'',{seqs:u.seqs,runs:runs,dur:u.dur,notes:u.notes,ring:u.ring,geo:u.geo},u.geo||'Unlinked runs');}
+function admMapK(k){openMap(k,'',ADM.out.fields[k]);}
+function admMove(k){
+  modal('<h2>Move '+esc(fName(k))+'’s runs</h2><div class="muted small" style="margin-bottom:10px">Pick the field these runs really belong to.</div><div class="form"><input list="admFs" id="admMv" placeholder="field…"><button class="btn" onclick="admMoveGo('+jsq(k)+')">Move</button></div>');}
+function admMoveGo(k){var O=ADM.out,to=admKeyFromText(document.getElementById('admMv').value);if(!to){toast('Pick a field from the list');return;}if(to===k){closeModal();return;}
+  var F=O.fields[k];delete O.fields[k];
+  var item={seqs:F.seqs,runs:Object.keys(F.runs).map(function(id){return {id:id.replace(/#\d+$/,''),note:F.runs[id].note,p:F.runs[id].p};}),dur:F.dur,notes:F.notes,ring:F.ring,geo:F.geo,how:'by hand',c:F.parts[0].c,sig:F.parts[0].sig};
+  rmAdd(O,to,item);O.fields[to].parts=F.parts;
+  O.links=O.links.filter(function(l){return !F.parts.some(function(p){return p.sig===l.ids&&l.c[0]===p.c[0]&&l.c[1]===p.c[1];});});
+  F.parts.forEach(function(p){O.links.push({c:p.c,ids:p.sig,k:to});});closeModal();toast('Moved to '+fName(to));render();}
+async function admPublish(){
+  var u=user();if(!u){signIn();return;}var O=ADM.out;
+  if(O.unlinked.length&&!confirm(O.unlinked.length+' group(s) of runs are still unlinked and won’t be published. Publish the rest now?'))return;
+  var data={v:1,src:O.src,fields:O.fields,links:O.links,stats:O.stats};ADM.pub=1;render();
+  try{var r=await irrFetch('irr-runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emp:u.emp,data:data})});
+    var o={};try{o=await r.json();}catch(e){}
+    if(r.status===404||(!r.ok&&!o.error))throw new Error('the relay has no run-map route yet — deploy relay v9.3');
+    if(!r.ok||!o.ok)throw new Error(o.error||('relay error '+r.status));
+    data.t=o.t;data.by=u.emp;RUNMAP=data;RUNMAP_SRC='live';try{localStorage.setItem('irr_runmap',JSON.stringify(data));}catch(e){}
+    ADM.pub=0;toast('Published ✓ — '+o.fields+' fields');ADM=null;
+  }catch(e){ADM.pub=0;toast('Not published: '+e.message);}
+  render();
+}
+
 /* ── shell ─────────────────────────────────────────────────────────────── */
-var VIEWS=[['plan','Records'],['sup','Supervisor'],['staff','My moves'],['log','Log pass'],['agro','Last watered'],['tot','Totals'],['set','Settings']];
+var VIEWS=[['plan','Records'],['sup','Supervisor'],['staff','My moves'],['log','Log pass'],['agro','Last watered'],['tot','Totals'],['set','Settings'],['adm','Admin']];
 function go(v){S.view=v;saveUi();render();window.scrollTo(0,0);}
 function setSeason(y){S.season=y;ZMAP=null;S.st='';render();}
 function render(){
@@ -1356,15 +1751,16 @@ function render(){
   document.getElementById('seasonSeg').innerHTML=[[LIVE_YR,LIVE_YR+' live'],['2026','2026 records']].map(function(x){return '<button class="'+(S.season===x[0]?'on':'')+'" onclick="setSeason(\''+x[0]+'\')">'+x[1]+'</button>';}).join('');
   var n=nPending(),b=document.getElementById('saveBtn');b.textContent=SAVING?'Saving…':n?(_saveErr?'Save ('+n+')':'Saving '+n+'…'):'Saved ✓';b.className='savebtn'+(n?' dirty':'');
   if(PREVIEW)document.getElementById('pvbar').innerHTML='<div class="pvbar">PREVIEW — FieldPlan snapshot '+esc(SNAP.taken)+' + your 2026 records, “today” = '+dm(SNAP.today)+'/'+SNAP.today.slice(0,4)+'. Try anything: nothing here reaches the live app.</div>';
-  var VV=myRole()==='staff'?VIEWS.filter(function(v){return v[0]==='staff'||v[0]==='agro';}):VIEWS;if(VV.every(function(v){return v[0]!==S.view;}))S.view=VV[0][0];
+  var VV=myRole()==='staff'?VIEWS.filter(function(v){return v[0]==='staff'||v[0]==='agro';}):VIEWS.filter(function(v){return v[0]!=='adm'||canConfigure();});if(VV.every(function(v){return v[0]!==S.view;}))S.view=VV[0][0];
   document.getElementById('seasonSeg').style.display=myRole()==='staff'?'none':'';
   document.getElementById('nav').innerHTML=VV.map(function(v){return '<button class="'+(S.view===v[0]?'on':'')+'" onclick="go(\''+v[0]+'\')">'+v[1]+'</button>';}).join('');
   var top='';
   if(PREVIEW)document.getElementById('seasonSeg').style.display='none';
   if(n&&_saveErr)top+='<div class="banner warn">⚠ <b>'+n+' change'+(n>1?'s':'')+' not saved yet</b> — '+esc(_saveErr)+'. They are kept on this device and will send automatically.</div>';
   if(is26())top+='<div class="banner info">Viewing the <b>2026 records</b> (read-only, from the spreadsheet) as at <input type="date" value="'+S.asAt+'" min="2026-03-23" max="2026-10-24" onchange="S.asAt=this.value;saveUi();render()" style="padding:2px 4px">. Statuses are worked out as if it were that day.</div>';
+  if(IRR_OK===false&&canConfigure())top+='<div class="banner warn">⚠ The irrigation relay isn’t answering ('+esc(IRR_WHY)+') — the app is using the FieldPlan relay for now. Everything still saves; check <b>irrigation-relay</b> in Cloudflare.</div>';
   if(!u)top+='<div class="banner warn">Not signed in — varieties/onion types from Omnia need sign-in, and so does saving. <span class="lnk" onclick="signIn()">Sign in</span></div>';
-  var html={plan:vPlanner,sup:vSup,staff:vStaff,log:vLog,agro:vAgro,tot:vTotals,set:vSettings}[S.view]||vPlanner;
+  var html={plan:vPlanner,sup:vSup,staff:vStaff,log:vLog,agro:vAgro,tot:vTotals,set:vSettings,adm:vAdmin}[S.view]||vPlanner;
   var y=window.scrollY;document.getElementById('main').innerHTML=top+html();window.scrollTo(0,y);
   document.documentElement.style.setProperty('--hh',document.getElementById('hdr').offsetHeight+'px');
   if(S.view==='log'&&window._logKey){var lf=document.getElementById('lgField');if(lf)logPick(lf.value);}
@@ -1388,7 +1784,7 @@ async function refreshAll(force){
   await loadFieldPlan(force);
   try{var oc=JSON.parse(localStorage.getItem('irr_om_cache')||'null');if(oc&&!OMT){Object.assign(OMV,oc.v);SRC.om='last copy '+new Date(oc.t).toLocaleString('en-GB');}}catch(e){}
   render();
-  await loadOmnia();ZMAP=null;await loadAssets(force);render();
+  await loadOmnia();ZMAP=null;await loadAssets(force);await loadRunMap();render();
 }
 (async function boot(){
   try{
@@ -1400,11 +1796,12 @@ async function refreshAll(force){
     render();
     loadOmnia().then(function(){ZMAP=null;render();});
     loadAssets();
+    loadRunMap();
   }catch(e){
     document.getElementById('main').innerHTML='<div class="banner err">Could not load FieldPlan: '+esc(e.message)+'. Check your connection and reload.</div>';
   }
 })();
-document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&LOCAL){pull();if(nPending())save(true);}});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&LOCAL){pull();if(nPending())save(true);if(Date.now()-(window._rmT||0)>600000){window._rmT=Date.now();loadRunMap();}}});
 try{if(!PREVIEW&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('irr-sw.js').catch(function(){});}catch(e){}
 window.addEventListener('beforeunload',function(e){if(nPending()){e.preventDefault();e.returnValue='';}});
 </script>
