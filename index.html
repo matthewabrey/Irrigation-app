@@ -201,7 +201,7 @@ table.sheet th.tday{background:#fdf1e2;color:var(--tx)}
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   ABREYS IRRIGATION — v1.5 (23/11/26): own irrigation-relay (fieldplan-relay = Omnia + fallback); v1.4 run maps (Admin upload → map + next run for staff and supervisors); v1.3 priority sort on the Sort button — irrigation.abreys.app
+   ABREYS IRRIGATION — v1.6 (23/11/26): Admin brings through 2027 veg fields only + lists veg fields with no runs; v1.5 own irrigation-relay; v1.4 run maps (Admin upload → map + next run for staff and supervisors); v1.3 priority sort on the Sort button — irrigation.abreys.app
    Masters (re-read every load, never copied): FieldPlan.html (fields, estates,
    zones, cropping, water rates, isOurs/zone rules) and Omnia via the relay
    (varieties, onion types, working areas, field names).
@@ -1514,7 +1514,7 @@ function rmBuild(shpBuf, dbfBuf, geo, toKey, prev) {
   durs.forEach(d => { const g = near(d.pt, 600); if (g && !g.dur.includes(d.txt)) g.dur.push(d.txt + (d.extra ? ' (' + d.extra + ')' : '')); });
   notes.forEach(n => { const g = near(n.pt, 300); if (g) g.notes.push(n.t); });
   // 4) which field? the FieldPlan boundary most of the group's runs sit in (else the nearest within 60 m)
-  const polys = []; Object.keys(geo || {}).forEach(est => (geo[est] || []).forEach(f => (f.rings || []).forEach(ring => { if (ring.length < 3) return; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; ring.forEach(p => { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }); polys.push({ est, name: f.name, ring, bb: [x0, y0, x1, y1] }); })));
+  const polys = []; Object.keys(geo || {}).forEach(est => (geo[est] || []).forEach(f => (f.rings || []).forEach(ring => { if (ring.length < 3) return; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; ring.forEach(p => { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }); polys.push({ est, name: f.name, ring, bb: [x0, y0, x1, y1], crops: f.crops || {} }); })));
   const polyAt = pt => polys.filter(P => pt[0] >= P.bb[0] && pt[0] <= P.bb[2] && pt[1] >= P.bb[1] && pt[1] <= P.bb[3] && rmInRing(pt, P.ring));
   const links = (prev && prev.links) || [];
   const sig = g => [...new Set(g.runs.map(r => r.id))].sort().join(',');
@@ -1529,7 +1529,7 @@ function rmBuild(shpBuf, dbfBuf, geo, toKey, prev) {
     if (!poly) { let bd = 60; polys.forEach(P => { const d = rmRingDist(c, P.ring); if (d < bd) { bd = d; poly = P; } }); }
     if (!key && poly) { key = toKey(poly.est, poly.name); how = key ? 'boundary' : ''; }
     if (lk && key === '-') return; // marked "ignore" by hand
-    const item = { seqs: g.seqs, runs: g.runs.map(r => ({ id: r.id, note: r.note, p: r.pts })), dur: g.dur, notes: g.notes, c: rpt(c), sig: s, geo: poly ? poly.est + ' · ' + poly.name : '', how, ring: poly ? rmSimplify(poly.ring, 80).map(rpt) : null };
+    const item = { seqs: g.seqs, runs: g.runs.map(r => ({ id: r.id, note: r.note, p: r.pts })), dur: g.dur, notes: g.notes, c: rpt(c), sig: s, geo: poly ? poly.est + ' · ' + poly.name : '', how, ring: poly ? rmSimplify(poly.ring, 80).map(rpt) : null, gc: poly ? poly.crops : null };
     if (lk) out.links.push(lk);
     if (!key) { item.gid = 'g' + gi; if (!poly) { let bd = 1e9, bp = null; polys.forEach(P => { const d = rmRingDist(c, P.ring); if (d < bd) { bd = d; bp = P; } }); if (bp && bd < 3000) item.near = bp.est + ' · ' + bp.name + ' (' + Math.round(bd) + ' m away)'; } out.unlinked.push(item); return; }
     rmAdd(out, key, item);
@@ -1551,7 +1551,7 @@ function rmAdd(out, key, item) {
 }
 
 // FieldPlan boundary name → FieldPlan field (boundary names carry extras like "RPA", ".A", "(Eus)")
-function rmMatcher(F, keyOf) {
+function rmMatcher(F, keyOf, prefer) {   // prefer(key) → true for fields to choose when a name is shared (e.g. this season's veg)
   const N = s => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
   const clean = (n, est) => { let s = String(n || '');
     s = s.replace(/\s*[-_]?\s*RPA\s*$/i, '').replace(/^Dummy\s+/i, '').replace(/[._]\s*A\d*\s*$/i, '').replace(/\s+\(?[A-C]\d?\)?\s*$/, '').replace(/_\d+$/, '').replace(/\s*\((spinney[^)]*|veg|eus|wret|bot)\)\s*$/i, '');
@@ -1560,16 +1560,23 @@ function rmMatcher(F, keyOf) {
   F.forEach(f => { const e = f.estate; (byE[e] = byE[e] || []).push({ f, n: N(f.field), c: N(f.field).replace(N(e), '').replace(/headings$|h$/, '') }); });
   const bigr = s => { const o = new Map(); for (let i = 0; i < s.length - 1; i++) { const b = s.slice(i, i + 2); o.set(b, (o.get(b) || 0) + 1); } return o; };
   const dice = (a, b) => { if (a.length < 2 || b.length < 2) return a === b ? 1 : 0; const A = bigr(a), B = bigr(b); let m = 0; A.forEach((v, k) => { m += Math.min(v, B.get(k) || 0); }); return 2 * m / (a.length + b.length - 2); };
+  const one = hit => { if (hit.length === 1) return keyOf(hit[0].f); if (prefer && hit.length > 1) { const p = hit.filter(x => prefer(keyOf(x.f))); if (p.length === 1) return keyOf(p[0].f); } return null; };
   return (est, name) => {
     const L = byE[est] || []; if (!L.length) return null;
     const raw = N(name), c = clean(name, est), cH = c.replace(/headings$|h$/, '');
-    let hit = L.filter(x => x.n === raw); if (hit.length === 1) return keyOf(hit[0].f);
-    hit = L.filter(x => x.n === c || x.c === c || x.c === cH); if (hit.length === 1) return keyOf(hit[0].f);
-    hit = L.filter(x => c.length >= 4 && (x.c.startsWith(c) || c.startsWith(x.c)) && x.c.length >= 4); if (hit.length === 1) return keyOf(hit[0].f);
+    let hit = L.filter(x => x.n === raw), k = one(hit); if (k) return k;
+    hit = L.filter(x => x.n === c || x.c === c || x.c === cH); k = one(hit); if (k) return k;
+    hit = L.filter(x => c.length >= 4 && (x.c.startsWith(c) || c.startsWith(x.c)) && x.c.length >= 4); k = one(hit); if (k) return k;
     const sc = L.map(x => [dice(cH, x.c), x]).sort((a, b) => b[0] - a[0]);
     if (sc[0] && sc[0][0] >= 0.78 && (!sc[1] || sc[0][0] - sc[1][0] >= 0.08)) return keyOf(sc[0][1].f);
     return null;
   };
+}
+function rmNameScore(a, b, est) {   // 0..1 similarity of two field names (extras like RPA, .A, (Headings) ignored)
+  const N = s => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/\s*[-_]?\s*rpa\s*$/i, '').replace(/[._]\s*a\d*\s*$/i, '').replace(/\s+\(?[a-c]\d?\)?\s*$/i, '').replace(/\(headings\)|\(h\)|headings/g, '').replace(/[^a-z0-9]/g, '').replace(String(est || '').toLowerCase().replace(/[^a-z0-9]/g, ''), '');
+  const x = N(a), y = N(b); if (!x || !y) return 0; if (x === y) return 1; if (x.startsWith(y) || y.startsWith(x)) return 0.9;
+  const bg = s => { const o = new Map(); for (let i = 0; i < s.length - 1; i++) { const t = s.slice(i, i + 2); o.set(t, (o.get(t) || 0) + 1); } return o; };
+  if (x.length < 2 || y.length < 2) return 0; const A = bg(x), B = bg(y); let m = 0; A.forEach((v, k) => { m += Math.min(v, B.get(k) || 0); }); return 2 * m / (x.length + y.length - 2);
 }
 
 /* ═══ RUN MAPS in the app ═════════════════════════════════════════════════
@@ -1666,6 +1673,23 @@ function closeMap(){if(_watch!=null){navigator.geolocation.clearWatch(_watch);_w
 
 /* ═══ ADMIN page — upload the Land App run-map export; it links each field and publishes it ═══ */
 var ADM=null; // {out, file, err, busy}
+var RM_VEG=/potato|carrot|parsnip|onion|shallot/i;
+function liveVeg(){var sv=S.season;S.season=LIVE_YR;var L=fieldList();S.season=sv;return L;}   // the fields the app irrigates this season (FieldPlan veg in 2027 + any added)
+function admAfterBuild(out,geo){
+  var vl=liveVeg(),veg={};vl.forEach(function(f){veg[key(f)]=f;});
+  out.skip=[];Object.keys(out.fields).forEach(function(k){if(!veg[k]){out.skip.push(k);delete out.fields[k];}});   // not veg this season
+  out.skipU=0;out.unlinked=out.unlinked.filter(function(u){if(u.gc&&!RM_VEG.test(u.gc[LIVE_YR]||'')){out.skipU++;return false;}return true;});
+  // suggest the nearest veg field that has no runs yet (within 500 m of its FieldPlan boundary)
+  var M=rmMatcher(FP.F,key),rings={};
+  Object.keys(geo||{}).forEach(function(est){(geo[est]||[]).forEach(function(g){var k=M(est,g.name);if(k&&veg[k]&&!out.fields[k])(g.rings||[]).forEach(function(r){(rings[k]=rings[k]||[]).push(r);});});});
+  var missing=vl.filter(function(f){return !out.fields[key(f)];});
+  out.unlinked.forEach(function(u){var best=null,bd=500;Object.keys(rings).forEach(function(k){rings[k].forEach(function(r){var d=rmInRing(u.c,r)?0:rmRingDist(u.c,r);if(d<bd){bd=d;best=k;}});});if(best){u.sug=best;u.sugD=Math.round(bd);return;}
+    var nd=u.near?+((/\((\d+) m away\)/.exec(u.near)||[])[1]||9999):9999,g=u.geo||(nd<150?u.near:'');if(!g)return;   /* name hints only from the boundary the runs sit on (or one right next to it) */
+var est=g.split(' · ')[0],nm=g.split(' · ')[1].replace(/\s*\(\d+ m away\)$/,'');
+    var sc=missing.filter(function(f){return f.estate===est;}).map(function(f){return [rmNameScore(nm,f.field,est),f];}).sort(function(a,b){return b[0]-a[0];});
+    if(sc[0]&&sc[0][0]>=0.6&&(!sc[1]||sc[0][0]-sc[1][0]>=0.05)){u.sug=key(sc[0][1]);u.sugN=1;}});
+  out.unlinked.sort(function(a,b){return (a.sug?0:1)-(b.sug?0:1);});
+}
 function vAdmin(){
   if(!canConfigure())return '<div class="banner info">The Admin page is for supervisors, managers and the office.</div>';
   var R=RUNMAP,cur=R?'<b>'+Object.keys(R.fields).length+'</b> fields with run maps · from <b>'+esc(R.src||'?')+'</b>'+(R.t?' · published '+new Date(R.t).toLocaleString('en-GB',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'')+(R.by?' by '+esc(first(nameOf(R.by))):'')+(RUNMAP_SRC==='live'?'':' <span class="muted">('+esc(RUNMAP_SRC)+')</span>'):'<span class="muted">No run maps published yet.</span>';
@@ -1679,22 +1703,29 @@ function vAdmin(){
     +'</div></div>';
   if(!ADM||!ADM.out)return h;
   var O=ADM.out,keys=Object.keys(O.fields),nr=keys.reduce(function(a,k){return a+Object.keys(O.fields[k].runs).length;},0);
-  var fopts=FP.F.slice().sort(function(a,b){return a.field<b.field?-1:1;}).map(function(f){return '<option value="'+esc(f.field+' — '+f.estate)+'">';}).join('');
+  var vl=liveVeg(),miss=vl.filter(function(f){return !O.fields[key(f)];}).sort(function(a,b){return (a.estate+a.field)<(b.estate+b.field)?-1:1;});
+  var fopts=miss.concat(vl.filter(function(f){return O.fields[key(f)];})).map(function(f){return '<option value="'+esc(f.field+' — '+f.estate)+'">'+(O.fields[key(f)]?'has runs':'no runs yet')+' · '+esc(crop(f))+'</option>';}).join('');
   h+='<div class="kpis"><div class="kpi"><div class="l">Fields linked</div><div class="v">'+keys.length+'</div><div class="s">'+nr+' runs</div></div>'
     +'<div class="kpi"><div class="l">To link by hand</div><div class="v" style="color:'+(O.unlinked.length?'var(--r2)':'var(--g1)')+'">'+O.unlinked.length+'</div><div class="s">groups of runs</div></div>'
-    +'<div class="kpi"><div class="l">In the file</div><div class="v">'+O.stats.runs+'</div><div class="s">runs · '+O.stats.orders+' order labels</div></div></div>'
+    +'<div class="kpi"><div class="l">2027 veg with no runs</div><div class="v" style="color:'+(miss.length?'var(--r1)':'var(--g1)')+'">'+miss.length+'</div><div class="s">of '+vl.length+' veg fields</div></div></div>'
+    +'<div class="banner info">Only this season’s vegetable fields are brought through — left out '+(O.skip||[]).length+' linked fields and '+(O.skipU||0)+' groups on FieldPlan boundaries that aren’t veg in '+LIVE_YR+'.</div>'
     +'<datalist id="admFs">'+fopts+'</datalist>'
     +'<div class="card"><h3>Publish <span class="muted small" style="font-weight:400">'+esc(ADM.file)+'</span><span class="sp"></span><button class="btn" onclick="admPublish()"'+(ADM.pub?' disabled':'')+'>'+(ADM.pub?'Publishing…':'✓ Publish to the app')+'</button></h3>'
     +'<div class="pad small muted">Groups left unlinked aren’t published — link them first or leave them out. Publishing replaces the run maps everyone sees.</div></div>';
-  var ul=O.unlinked.map(function(u,i){var ids=u.runs.map(function(r){return r.id;}).join(', ');
+  var row=function(u,i){var ids=u.runs.map(function(r){return r.id;}).join(', ');
     return '<tr><td><b>'+esc(u.geo||'not on a FieldPlan boundary')+'</b>'+(u.near?'<div class="small muted">nearest: '+esc(u.near)+'</div>':'')+'<div class="muted small">runs '+esc(ids||'—')+'</div>'+(u.seqs.some(function(s){return !s.auto;})?'<div class="sub">'+esc(u.seqs.filter(function(s){return !s.auto;}).map(function(s){return (s.m?s.m+': ':'')+s.steps.map(function(x){return x.t;}).join(',');}).join(' · '))+'</div>':'')+'</td>'
       +'<td><button class="btn o sm" onclick="admMap('+i+')">🗺 See</button></td>'
-      +'<td><input list="admFs" id="admU'+i+'" placeholder="link to field…" style="min-width:210px;padding:6px;border:1px solid var(--bd2);border-radius:6px"> <button class="btn sm" onclick="admLink('+i+')">Link</button> <button class="btn o sm" onclick="admIgnore('+i+')" title="leave out of the app">Leave out</button></td></tr>';}).join('');
-  if(O.unlinked.length)h+='<div class="card"><h3>To link by hand <span class="muted small" style="font-weight:400">tap 🗺 See to check where it is, then pick the field</span></h3><div class="tw" style="max-height:60vh"><table><thead><tr><th>Where</th><th></th><th>Field</th></tr></thead><tbody>'+ul+'</tbody></table></div></div>';
+      +'<td>'+(u.sug?'<div class="small" style="color:var(--g1);font-weight:600">suggested: '+esc(fName(u.sug))+' ('+(u.sugN?'similar name':u.sugD?u.sugD+' m away':'runs inside it')+')</div>':'')+'<input list="admFs" id="admU'+i+'" value="'+(u.sug?esc(fName(u.sug)+' — '+fEst(u.sug)):'')+'" placeholder="link to field…" style="min-width:210px;padding:6px;border:1px solid var(--bd2);border-radius:6px"> <button class="btn sm" onclick="admLink('+i+')">Link</button> <button class="btn o sm" onclick="admIgnore('+i+')" title="leave out of the app">Leave out</button></td></tr>';};
+  var withS=[],noS=[];O.unlinked.forEach(function(u,i){(u.sug?withS:noS).push(row(u,i));});
+  var thead='<table><thead><tr><th>Where</th><th></th><th>Field</th></tr></thead><tbody>';
+  if(O.unlinked.length)h+='<div class="card"><h3>To link by hand <span class="muted small" style="font-weight:400">'+withS.length+' look like a '+LIVE_YR+' veg field — check with 🗺 See, then Link</span></h3><div class="tw" style="max-height:60vh">'+(withS.length?thead+withS.join('')+'</tbody></table>':'<div class="pad small muted">None matched a veg field.</div>')+'</div>'
+    +(noS.length?'<details class="pad small"><summary style="cursor:pointer"><b>'+noS.length+' other groups</b> not on or near a '+LIVE_YR+' veg field — probably not needed; open to check</summary><div class="tw" style="max-height:60vh;margin-top:8px">'+thead+noS.join('')+'</tbody></table></div></details>':'')+'</div>';
   var lr=keys.map(function(k){var F=O.fields[k],f=BYKEY[k];return [f?f.estate:'',f?f.field:k,k,F];}).sort(function(a,b){return (a[0]+a[1])<(b[0]+b[1])?-1:1;}).map(function(x){var F=x[3],k=x[2];
     return '<tr><td><b>'+esc(x[1])+'</b><div class="muted small">'+esc(x[0])+'</div></td><td class="small">'+esc(F.geo||'')+'<div class="muted">'+(F.how==='by hand'?'linked by hand':'matched by boundary')+'</div></td>'
       +'<td class="n">'+Object.keys(F.runs).length+'</td><td class="small">'+esc(F.seqs.map(function(s){return (s.m?s.m+': ':'')+s.steps.map(function(st){return st.t;}).join(',');}).join(' · '))+(F.dur.length?'<div class="muted">⏱ '+esc(F.dur.join(' / '))+'</div>':'')+'</td>'
       +'<td style="white-space:nowrap"><button class="btn o sm" onclick="admMapK('+jsq(k)+')">🗺</button> <button class="btn o sm" onclick="admMove('+jsq(k)+')">Change field</button></td></tr>';}).join('');
+  if(miss.length)h+='<div class="card"><h3>'+LIVE_YR+' veg fields with no run map ('+miss.length+') <span class="muted small" style="font-weight:400">draw their runs in Land App, or link a group above</span></h3><div class="tw" style="max-height:50vh"><table><thead><tr><th>Field</th><th>Estate</th><th>Crop</th><th class="n">Acres</th></tr></thead><tbody>'
+    +miss.map(function(f){return '<tr><td><b>'+esc(f.field)+'</b></td><td>'+esc(f.estate)+'</td><td>'+esc(crop(f))+(sub1(f)?' <span class="sub">'+esc(sub1(f))+'</span>':'')+'</td><td class="n">'+fmt(acres(f),1)+'</td></tr>';}).join('')+'</tbody></table></div></div>';
   h+='<div class="card"><h3>Linked fields <span class="muted small" style="font-weight:400">check any that look wrong — “Change field” moves it</span></h3><div class="tw" style="max-height:70vh"><table><thead><tr><th>Field</th><th>Map boundary</th><th class="n">Runs</th><th>Order</th><th></th></tr></thead><tbody>'+lr+'</tbody></table></div></div>';
   return h;
 }
@@ -1707,8 +1738,9 @@ async function admUpload(inp){
     var r=await fetch(FP_URL+(FP_URL.indexOf('?')<0?'?':'&')+'t='+Math.floor(Date.now()/600000));if(!r.ok)throw new Error('couldn’t read FieldPlan’s field boundaries (HTTP '+r.status+')');
     var geo=grabVal(await r.text(),/var ALL_ESTATES_GEO\s*=\s*\{/);
     if(!RUNMAP)await loadRunMap();
-    var out=rmBuild(await z[ns[0]](),await z[nd](),geo,rmMatcher(FP.F,key),RUNMAP);
-    out.src=file.name;ADM={out:out,file:file.name};
+    var vk={};liveVeg().forEach(function(f){vk[key(f)]=1;});
+    var out=rmBuild(await z[ns[0]](),await z[nd](),geo,rmMatcher(FP.F,key,function(k){return !!vk[k];}),RUNMAP);
+    admAfterBuild(out,geo);out.src=file.name;ADM={out:out,file:file.name};
   }catch(e){ADM={err:'Couldn’t read '+file.name+': '+e.message,file:file.name};}
   inp.value='';render();
 }
